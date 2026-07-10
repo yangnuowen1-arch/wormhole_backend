@@ -1,0 +1,223 @@
+basePath: /api/v1
+definitions:
+  dto.ErrorAPIResponse:
+    properties:
+      code:
+        example: 40101
+        type: integer
+      data:
+        example: ""
+        type: string
+      error:
+        example: token is expired
+        type: string
+      message:
+        example: 未登录，请先登录
+        type: string
+      requestId:
+        example: 5547e998-1127-4c9d-ae7e-f3508c42b96c
+        type: string
+      timestamp:
+        example: "2026-07-10T16:30:01+08:00"
+        type: string
+    type: object
+  dto.LogoutAPIResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.LogoutResponse'
+      error:
+        example: ""
+        type: string
+      message:
+        example: success
+        type: string
+      requestId:
+        example: 5547e998-1127-4c9d-ae7e-f3508c42b96c
+        type: string
+      timestamp:
+        example: "2026-07-10T16:30:01+08:00"
+        type: string
+    type: object
+  dto.LogoutResponse:
+    properties:
+      logged_out:
+        example: true
+        type: boolean
+    type: object
+  dto.UserAPIResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UserResponse'
+      error:
+        example: ""
+        type: string
+      message:
+        example: success
+        type: string
+      requestId:
+        example: 5547e998-1127-4c9d-ae7e-f3508c42b96c
+        type: string
+      timestamp:
+        example: "2026-07-10T16:30:01+08:00"
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      email:
+        example: alice@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      nickname:
+        example: Alice
+        type: string
+      username:
+        example: alice
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入
+    HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。'
+  title: Wormhole Backend API
+  version: "1.0"
+paths:
+  /auth/logout:
+    post:
+      description: '清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials:
+        "include"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 退出成功
+          schema:
+            $ref: '#/definitions/dto.LogoutAPIResponse'
+      summary: 退出登录
+      tags:
+      - auth
+  /auth/sso/callback:
+    get:
+      description: 该接口由 Keycloak 重定向调用，前端无需主动调用。后端校验 state，用 code 换取 token，验证 ID Token
+        签名/issuer/audience/nonce，按 Keycloak sub 创建或更新本地用户，写入 HttpOnly 会话 Cookie（默认
+        wormhole_session），最后 302 重定向回 return_to 对应的前端页面。
+      parameters:
+      - description: Keycloak authorization code；Keycloak 登录成功时携带
+        in: query
+        name: code
+        type: string
+      - description: OIDC state；必须与后端临时 Cookie 中的 state 一致
+        in: query
+        name: state
+        type: string
+      - description: Keycloak error；Keycloak 登录失败时携带
+        in: query
+        name: error
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to frontend return_to page
+          schema:
+            type: string
+        "400":
+          description: SSO 状态过期/无效、state 不匹配或缺少授权码
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: Keycloak 返回登录错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: SSO 未启用
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 建立本地会话失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "502":
+          description: Keycloak token 交换或 ID Token 校验失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      summary: Keycloak SSO 登录回调
+      tags:
+      - auth
+  /auth/sso/login:
+    get:
+      description: 前端点击 SSO 按钮时应使用 window.location.href 跳转到本接口，不建议用 fetch。本接口生成 OIDC
+        state/nonce/PKCE verifier，写入 HttpOnly 临时 Cookie，然后 302 重定向到 Keycloak 登录页。登录成功后
+        Keycloak 会回调 /auth/sso/callback。
+      parameters:
+      - default: /navigation
+        description: 登录成功后跳回的前端路径，只允许相对路径或 KEYCLOAK_FRONTEND_URL 同源绝对地址，例如 /navigation
+        in: query
+        name: return_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to Keycloak authorization endpoint
+          schema:
+            type: string
+        "404":
+          description: SSO 未启用
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 创建或编码 SSO 状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "502":
+          description: 获取 Keycloak 授权地址失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      summary: 发起 Keycloak SSO 登录
+      tags:
+      - auth
+  /users/me:
+    get:
+      description: '前端路由权限判断接口。浏览器登录后会自动携带 HttpOnly Cookie，前端必须使用 credentials: "include"；也兼容
+        Authorization: Bearer <token>。返回 200 表示已登录，返回 401 表示未登录或会话失效。'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 当前用户信息
+          schema:
+            $ref: '#/definitions/dto.UserAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取用户信息失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取当前登录用户信息
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    description: '兼容 Bearer token：Authorization: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+  CookieAuth:
+    description: SSO 登录成功后由后端写入的 HttpOnly 会话 Cookie，前端 JS 不能读取，fetch/axios 请求需携带 credentials/withCredentials。
+    in: cookie
+    name: wormhole_session
+    type: apiKey
+swagger: "2.0"

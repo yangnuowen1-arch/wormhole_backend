@@ -1,0 +1,320 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入 HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。",
+        "title": "Wormhole Backend API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/logout": {
+            "post": {
+                "description": "清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: \"include\"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "退出登录",
+                "responses": {
+                    "200": {
+                        "description": "退出成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LogoutAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sso/callback": {
+            "get": {
+                "description": "该接口由 Keycloak 重定向调用，前端无需主动调用。后端校验 state，用 code 换取 token，验证 ID Token 签名/issuer/audience/nonce，按 Keycloak sub 创建或更新本地用户，写入 HttpOnly 会话 Cookie（默认 wormhole_session），最后 302 重定向回 return_to 对应的前端页面。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Keycloak SSO 登录回调",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keycloak authorization code；Keycloak 登录成功时携带",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "OIDC state；必须与后端临时 Cookie 中的 state 一致",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keycloak error；Keycloak 登录失败时携带",
+                        "name": "error",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to frontend return_to page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "SSO 状态过期/无效、state 不匹配或缺少授权码",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Keycloak 返回登录错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "SSO 未启用",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "建立本地会话失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Keycloak token 交换或 ID Token 校验失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sso/login": {
+            "get": {
+                "description": "前端点击 SSO 按钮时应使用 window.location.href 跳转到本接口，不建议用 fetch。本接口生成 OIDC state/nonce/PKCE verifier，写入 HttpOnly 临时 Cookie，然后 302 重定向到 Keycloak 登录页。登录成功后 Keycloak 会回调 /auth/sso/callback。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "发起 Keycloak SSO 登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "/navigation",
+                        "description": "登录成功后跳回的前端路径，只允许相对路径或 KEYCLOAK_FRONTEND_URL 同源绝对地址，例如 /navigation",
+                        "name": "return_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Keycloak authorization endpoint",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "SSO 未启用",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "创建或编码 SSO 状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "获取 Keycloak 授权地址失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "前端路由权限判断接口。浏览器登录后会自动携带 HttpOnly Cookie，前端必须使用 credentials: \"include\"；也兼容 Authorization: Bearer \u003ctoken\u003e。返回 200 表示已登录，返回 401 表示未登录或会话失效。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "获取当前登录用户信息",
+                "responses": {
+                    "200": {
+                        "description": "当前用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取用户信息失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.ErrorAPIResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 40101
+                },
+                "data": {
+                    "type": "string",
+                    "example": ""
+                },
+                "error": {
+                    "type": "string",
+                    "example": "token is expired"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "未登录，请先登录"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "5547e998-1127-4c9d-ae7e-f3508c42b96c"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-07-10T16:30:01+08:00"
+                }
+            }
+        },
+        "dto.LogoutAPIResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.LogoutResponse"
+                },
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "message": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "5547e998-1127-4c9d-ae7e-f3508c42b96c"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-07-10T16:30:01+08:00"
+                }
+            }
+        },
+        "dto.LogoutResponse": {
+            "type": "object",
+            "properties": {
+                "logged_out": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.UserAPIResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.UserResponse"
+                },
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "message": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "5547e998-1127-4c9d-ae7e-f3508c42b96c"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-07-10T16:30:01+08:00"
+                }
+            }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "alice@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "Alice"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "alice"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "兼容 Bearer token：Authorization: Bearer \u003ctoken\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "CookieAuth": {
+            "description": "SSO 登录成功后由后端写入的 HttpOnly 会话 Cookie，前端 JS 不能读取，fetch/axios 请求需携带 credentials/withCredentials。",
+            "type": "apiKey",
+            "name": "wormhole_session",
+            "in": "cookie"
+        }
+    }
+}

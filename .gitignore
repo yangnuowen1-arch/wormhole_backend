@@ -1,0 +1,20 @@
+# 环境配置（勿提交敏感值）
+.env
+
+# 上传目录
+uploads/
+
+# 本地编译产物
+/server
+/wormhole_backend
+*.exe
+
+# 依赖缓存
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+
+# 系统
+.DS_Store
