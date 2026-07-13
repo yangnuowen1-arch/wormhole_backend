@@ -17,6 +17,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*model.User, error)
 	FindByUsername(ctx context.Context, username string) (*model.User, error)
 	FindByKeycloakID(ctx context.Context, keycloakID string) (*model.User, error)
+	FindRolesByUserID(ctx context.Context, userID int64) ([]model.Role, error)
 	ExistsByUsername(ctx context.Context, username string) (bool, error)
 	UpdateKeycloakProfile(ctx context.Context, u *model.User) error
 }
@@ -70,6 +71,21 @@ func (r *userRepository) FindByKeycloakID(ctx context.Context, keycloakID string
 		return nil, err
 	}
 	return &u, nil
+}
+
+func (r *userRepository) FindRolesByUserID(ctx context.Context, userID int64) ([]model.Role, error) {
+	var roles []model.Role
+	err := r.db.WithContext(ctx).
+		Table(model.TableNameRole).
+		Select("roles.*").
+		Joins("JOIN user_role ON user_role.role_id = roles.id").
+		Where("user_role.user_id = ?", userID).
+		Order("roles.id ASC").
+		Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }
 
 // UpdateKeycloakProfile 同步 Keycloak 提供的展示资料，并更新最近登录时间。

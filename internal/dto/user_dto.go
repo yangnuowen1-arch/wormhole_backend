@@ -27,10 +27,19 @@ type LoginResponse struct {
 
 // UserResponse 用户信息响应。
 type UserResponse struct {
-	ID       int64  `json:"id" example:"1"`
-	Username string `json:"username" example:"alice"`
-	Email    string `json:"email" example:"alice@example.com"`
-	Nickname string `json:"nickname" example:"Alice"`
+	ID       int64          `json:"id" example:"1"`
+	Username string         `json:"username" example:"alice"`
+	Email    string         `json:"email" example:"alice@example.com"`
+	Nickname string         `json:"nickname" example:"Alice"`
+	Roles    []RoleResponse `json:"roles"`
+}
+
+// RoleResponse 用户角色信息响应。
+type RoleResponse struct {
+	ID          int32  `json:"id" example:"1"`
+	Code        string `json:"code" example:"admin"`
+	Name        string `json:"name" example:"管理员"`
+	Description string `json:"description" example:"可以维护资源中心配置"`
 }
 
 // LogoutResponse 退出登录响应数据。

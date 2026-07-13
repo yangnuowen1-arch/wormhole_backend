@@ -10,7 +10,7 @@ import (
 
 // @title        Wormhole Backend API
 // @version      1.0
-// @description  Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入 HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。
+// @description  Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入 HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。普通业务接口要求登录，/admin 开头的管理接口额外要求当前用户拥有 admin 角色。
 // @BasePath     /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header

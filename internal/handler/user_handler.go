@@ -16,7 +16,10 @@ import (
 	"github.com/yang/wormhole_backend/internal/service"
 )
 
-const oidcStateTTL = 10 * time.Minute
+const (
+	oidcStateTTL        = 10 * time.Minute
+	oidcStateCookiePath = "/api/v1/auth/sso"
+)
 
 // UserHandler 用户 HTTP 层。
 type UserHandler struct {
@@ -104,24 +107,30 @@ func (h *UserHandler) StartSSO(c *gin.Context) {
 		return
 	}
 
-	loginState, err := h.stateManager.NewLoginState(h.safeReturnTo(c.Query("return_to")))
-	if err != nil {
-		response.Error(c, http.StatusInternalServerError, 50001, "创建 SSO 状态失败", err.Error())
-		return
+	returnTo := h.safeReturnTo(c.Query("return_to"))
+	loginState, ok := h.reusableLoginState(c, returnTo)
+	if !ok {
+		var err error
+		loginState, err = h.stateManager.NewLoginState(returnTo)
+		if err != nil {
+			response.Error(c, http.StatusInternalServerError, 50001, "创建 SSO 状态失败", err.Error())
+			return
+		}
 	}
+
 	encodedState, err := h.stateManager.Encode(loginState)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, 50001, "编码 SSO 状态失败", err.Error())
 		return
 	}
 
-	h.setCookie(c, h.cfg.KeycloakStateCookieName, encodedState, int(oidcStateTTL.Seconds()), "/api/v1/auth/sso")
 	authorizationURL, err := h.keycloak.AuthorizationURL(c.Request.Context(), loginState.State, loginState.Nonce, loginState.Verifier)
 	if err != nil {
 		response.Error(c, http.StatusBadGateway, 50201, "获取 Keycloak 授权地址失败", err.Error())
 		return
 	}
 
+	h.setCookie(c, h.oidcStateCookieName(loginState.State), encodedState, int(oidcStateTTL.Seconds()), oidcStateCookiePath)
 	c.Redirect(http.StatusFound, authorizationURL)
 }
 
@@ -147,45 +156,46 @@ func (h *UserHandler) CallbackSSO(c *gin.Context) {
 	}
 
 	if oidcErr := c.Query("error"); oidcErr != "" {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+		h.clearOIDCStateCookie(c, h.oidcStateCookieName(c.Query("state")))
 		response.Error(c, http.StatusUnauthorized, 40102, "Keycloak 登录失败", oidcErr)
 		return
 	}
 
-	stateCookie, err := c.Cookie(h.cfg.KeycloakStateCookieName)
-	if err != nil || stateCookie == "" {
+	queryState := c.Query("state")
+	stateCookieName, stateCookie, ok := h.oidcStateCookie(c, queryState)
+	if !ok {
 		response.Error(c, http.StatusBadRequest, 40002, "SSO 状态已过期，请重新登录", nil)
 		return
 	}
 	loginState, err := h.stateManager.Decode(stateCookie)
 	if err != nil {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+		h.clearOIDCStateCookie(c, stateCookieName)
 		response.Error(c, http.StatusBadRequest, 40002, "SSO 状态无效，请重新登录", err.Error())
 		return
 	}
-	if c.Query("state") != loginState.State {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+	if queryState != loginState.State {
+		h.clearOIDCStateCookie(c, stateCookieName)
 		response.Error(c, http.StatusBadRequest, 40002, "SSO state 校验失败", nil)
 		return
 	}
 
 	code := c.Query("code")
 	if code == "" {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+		h.clearOIDCStateCookie(c, stateCookieName)
 		response.Error(c, http.StatusBadRequest, 40001, "缺少授权码", nil)
 		return
 	}
 
 	identity, err := h.keycloak.ExchangeAndVerify(c.Request.Context(), code, loginState.Verifier, loginState.Nonce)
 	if err != nil {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+		h.clearOIDCStateCookie(c, stateCookieName)
 		response.Error(c, http.StatusBadGateway, 50202, "Keycloak token 校验失败", err.Error())
 		return
 	}
 
 	loginResp, err := h.service.LoginWithKeycloak(c.Request.Context(), identity)
 	if err != nil {
-		h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+		h.clearOIDCStateCookie(c, stateCookieName)
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrInvalidKeycloakIdentity) || errors.Is(err, service.ErrKeycloakUsernameConflict) {
 			status = http.StatusBadRequest
@@ -194,7 +204,7 @@ func (h *UserHandler) CallbackSSO(c *gin.Context) {
 		return
 	}
 
-	h.clearCookie(c, h.cfg.KeycloakStateCookieName, "/api/v1/auth/sso")
+	h.clearOIDCStateCookie(c, stateCookieName)
 	h.setCookie(c, h.cfg.AuthCookieName, loginResp.Token, h.cfg.JWTExpireHrs*3600, "/")
 	c.Redirect(http.StatusFound, h.safeReturnTo(loginState.ReturnTo))
 }
@@ -250,6 +260,75 @@ func (h *UserHandler) clearCookie(c *gin.Context, name, path string) {
 	h.setCookie(c, name, "", -1, path)
 }
 
+func (h *UserHandler) oidcStateCookieName(state string) string {
+	if !isOIDCStateToken(state) {
+		return h.cfg.KeycloakStateCookieName
+	}
+	return h.cfg.KeycloakStateCookieName + "_" + state
+}
+
+func (h *UserHandler) oidcStateCookie(c *gin.Context, state string) (string, string, bool) {
+	if !isOIDCStateToken(state) {
+		return "", "", false
+	}
+
+	name := h.oidcStateCookieName(state)
+	value, err := c.Cookie(name)
+	if err == nil && value != "" {
+		return name, value, true
+	}
+
+	// Backward compatibility for users who started SSO before the per-state
+	// cookie naming scheme was deployed.
+	value, err = c.Cookie(h.cfg.KeycloakStateCookieName)
+	if err == nil && value != "" {
+		return h.cfg.KeycloakStateCookieName, value, true
+	}
+	return "", "", false
+}
+
+func (h *UserHandler) reusableLoginState(c *gin.Context, returnTo string) (auth.OIDCLoginState, bool) {
+	for _, cookie := range c.Request.Cookies() {
+		if !h.isOIDCStateCookieName(cookie.Name) || cookie.Value == "" {
+			continue
+		}
+		loginState, err := h.stateManager.Decode(cookie.Value)
+		if err != nil || loginState.ReturnTo != returnTo {
+			continue
+		}
+		if cookie.Name == h.oidcStateCookieName(loginState.State) {
+			return loginState, true
+		}
+	}
+
+	value, err := c.Cookie(h.cfg.KeycloakStateCookieName)
+	if err != nil || value == "" {
+		return auth.OIDCLoginState{}, false
+	}
+	loginState, err := h.stateManager.Decode(value)
+	if err != nil || loginState.ReturnTo != returnTo {
+		return auth.OIDCLoginState{}, false
+	}
+	return loginState, true
+}
+
+func (h *UserHandler) isOIDCStateCookieName(name string) bool {
+	prefix := h.cfg.KeycloakStateCookieName + "_"
+	if !strings.HasPrefix(name, prefix) {
+		return false
+	}
+	return isOIDCStateToken(strings.TrimPrefix(name, prefix))
+}
+
+func (h *UserHandler) clearOIDCStateCookie(c *gin.Context, name string) {
+	if name != "" {
+		h.clearCookie(c, name, oidcStateCookiePath)
+	}
+	if name != h.cfg.KeycloakStateCookieName {
+		h.clearCookie(c, h.cfg.KeycloakStateCookieName, oidcStateCookiePath)
+	}
+}
+
 func (h *UserHandler) safeReturnTo(raw string) string {
 	frontend := strings.TrimRight(h.cfg.KeycloakFrontendURL, "/")
 	if frontend == "" {
@@ -274,6 +353,23 @@ func (h *UserHandler) safeReturnTo(raw string) string {
 		return parsed.String()
 	}
 	return frontend
+}
+
+func isOIDCStateToken(value string) bool {
+	if value == "" || len(value) > 128 {
+		return false
+	}
+	for _, ch := range value {
+		switch {
+		case ch >= 'a' && ch <= 'z':
+		case ch >= 'A' && ch <= 'Z':
+		case ch >= '0' && ch <= '9':
+		case ch == '-' || ch == '_':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func sameSiteMode(value string) http.SameSite {

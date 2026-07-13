@@ -1,5 +1,185 @@
 basePath: /api/v1
 definitions:
+  dto.AddCommonToolRequest:
+    properties:
+      resourceId:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - resourceId
+    type: object
+  dto.CarouselSlideSortItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - id
+    type: object
+  dto.CommonToolSortItem:
+    properties:
+      resourceId:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - resourceId
+    type: object
+  dto.CreateCarouselSlideRequest:
+    properties:
+      autoplaySeconds:
+        example: 5
+        type: integer
+      background:
+        example: '#6D28D9'
+        maxLength: 64
+        type: string
+      buttonText:
+        example: 立即查看
+        maxLength: 32
+        type: string
+      code:
+        example: ai-console
+        maxLength: 64
+        type: string
+      description:
+        example: 重塑工具、对比性能、生成报告。
+        maxLength: 512
+        type: string
+      endsAt:
+        example: "2026-07-19T11:30:00Z"
+        type: string
+      imageUrl:
+        example: https://example.com/banner.png
+        maxLength: 512
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      startsAt:
+        example: "2026-07-12T11:30:00Z"
+        type: string
+      status:
+        example: 1
+        type: integer
+      subtitle:
+        example: 看板
+        maxLength: 128
+        type: string
+      targetUrl:
+        example: https://example.com/ai-console
+        maxLength: 512
+        type: string
+      title:
+        example: AI 助手控制台
+        maxLength: 128
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    required:
+    - code
+    - title
+    type: object
+  dto.CreateQuickEntryRequest:
+    properties:
+      code:
+        example: github
+        maxLength: 64
+        type: string
+      description:
+        example: 代码托管平台
+        maxLength: 255
+        type: string
+      iconText:
+        example: Git
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/github.png
+        maxLength: 255
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+      targetUrl:
+        example: https://github.com
+        maxLength: 512
+        type: string
+      title:
+        example: GitHub
+        maxLength: 64
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    required:
+    - code
+    - targetUrl
+    - title
+    type: object
+  dto.CreateRecommendationItemRequest:
+    properties:
+      iconText:
+        example: Cl
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/icon.png
+        maxLength: 255
+        type: string
+      publishedAt:
+        example: "2026-07-12T11:30:00Z"
+        type: string
+      resourceId:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+      sourceName:
+        example: Anthropic
+        maxLength: 64
+        type: string
+      sourceUrl:
+        example: https://www.anthropic.com
+        maxLength: 512
+        type: string
+      status:
+        example: 1
+        type: integer
+      subtitle:
+        example: Anthropic
+        maxLength: 128
+        type: string
+      targetUrl:
+        example: https://example.com/article
+        maxLength: 512
+        type: string
+      title:
+        example: Claude 3.5：工程师需要了解的要点
+        maxLength: 128
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    required:
+    - title
+    type: object
   dto.ErrorAPIResponse:
     properties:
       code:
@@ -47,6 +227,247 @@ definitions:
         example: true
         type: boolean
     type: object
+  dto.QuickEntrySortItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - id
+    type: object
+  dto.RecommendationItemSortItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - id
+    type: object
+  dto.RecordSearchHistoryRequest:
+    properties:
+      lastResultCount:
+        example: 8
+        type: integer
+      query:
+        example: Claude
+        maxLength: 128
+        type: string
+    required:
+    - query
+    type: object
+  dto.RoleResponse:
+    properties:
+      code:
+        example: admin
+        type: string
+      description:
+        example: 可以维护资源中心配置
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 管理员
+        type: string
+    type: object
+  dto.SortCarouselSlidesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CarouselSlideSortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.SortCommonToolsRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CommonToolSortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.SortQuickEntriesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.QuickEntrySortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.SortRecommendationItemsRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.RecommendationItemSortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.UpdateCarouselSlideRequest:
+    properties:
+      autoplaySeconds:
+        example: 5
+        type: integer
+      background:
+        example: '#6D28D9'
+        maxLength: 64
+        type: string
+      buttonText:
+        example: 立即查看
+        maxLength: 32
+        type: string
+      code:
+        example: ai-console
+        maxLength: 64
+        type: string
+      description:
+        example: 重塑工具、对比性能、生成报告。
+        maxLength: 512
+        type: string
+      endsAt:
+        example: "2026-07-19T11:30:00Z"
+        type: string
+      imageUrl:
+        example: https://example.com/banner.png
+        maxLength: 512
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      startsAt:
+        example: "2026-07-12T11:30:00Z"
+        type: string
+      status:
+        example: 1
+        type: integer
+      subtitle:
+        example: 看板
+        maxLength: 128
+        type: string
+      targetUrl:
+        example: https://example.com/ai-console
+        maxLength: 512
+        type: string
+      title:
+        example: AI 助手控制台
+        maxLength: 128
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UpdateCarouselSlideStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
+  dto.UpdateQuickEntryRequest:
+    properties:
+      code:
+        example: github
+        maxLength: 64
+        type: string
+      description:
+        example: 代码托管平台
+        maxLength: 255
+        type: string
+      iconText:
+        example: Git
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/github.png
+        maxLength: 255
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+      targetUrl:
+        example: https://github.com
+        maxLength: 512
+        type: string
+      title:
+        example: GitHub
+        maxLength: 64
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UpdateQuickEntryStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
+  dto.UpdateRecommendationItemRequest:
+    properties:
+      iconText:
+        example: Cl
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/icon.png
+        maxLength: 255
+        type: string
+      publishedAt:
+        example: "2026-07-12T11:30:00Z"
+        type: string
+      resourceId:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+      sourceName:
+        example: Anthropic
+        maxLength: 64
+        type: string
+      sourceUrl:
+        example: https://www.anthropic.com
+        maxLength: 512
+        type: string
+      status:
+        example: 1
+        type: integer
+      subtitle:
+        example: Anthropic
+        maxLength: 128
+        type: string
+      targetUrl:
+        example: https://example.com/article
+        maxLength: 512
+        type: string
+      title:
+        example: Claude 3.5：工程师需要了解的要点
+        maxLength: 128
+        type: string
+      visibleRoleCodes:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UpdateRecommendationItemStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
   dto.UserAPIResponse:
     properties:
       code:
@@ -78,17 +499,693 @@ definitions:
       nickname:
         example: Alice
         type: string
+      roles:
+        items:
+          $ref: '#/definitions/dto.RoleResponse'
+        type: array
       username:
         example: alice
+        type: string
+    type: object
+  response.APIResponse:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error: {}
+      message:
+        type: string
+      requestId:
+        type: string
+      timestamp:
         type: string
     type: object
 info:
   contact: {}
   description: 'Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入
-    HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。'
+    HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。普通业务接口要求登录，/admin
+    开头的管理接口额外要求当前用户拥有 admin 角色。'
   title: Wormhole Backend API
   version: "1.0"
 paths:
+  /admin/carousel-slides:
+    get:
+      description: 管理员查看全部幻灯片，可按 status 过滤。
+      parameters:
+      - description: 状态：1=启用，0=停用；不传返回全部
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 幻灯片列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取幻灯片失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员获取幻灯片列表
+      tags:
+      - admin-carousel-slides
+    post:
+      consumes:
+      - application/json
+      description: 管理员新增一张幻灯片。
+      parameters:
+      - description: 幻灯片
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCarouselSlideRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 幻灯片
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 新增幻灯片失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员新增幻灯片
+      tags:
+      - admin-carousel-slides
+  /admin/carousel-slides/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员部分更新一张幻灯片。
+      parameters:
+      - description: 幻灯片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 幻灯片
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCarouselSlideRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 幻灯片
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 幻灯片不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 编辑幻灯片失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员编辑幻灯片
+      tags:
+      - admin-carousel-slides
+  /admin/carousel-slides/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员更新幻灯片状态，1=启用，0=停用。
+      parameters:
+      - description: 幻灯片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCarouselSlideStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 幻灯片
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 幻灯片不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新幻灯片状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员启停幻灯片
+      tags:
+      - admin-carousel-slides
+  /admin/carousel-slides/sort:
+    put:
+      consumes:
+      - application/json
+      description: 管理员批量更新幻灯片排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortCarouselSlidesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新幻灯片排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新幻灯片排序
+      tags:
+      - admin-carousel-slides
+  /admin/quick-entries:
+    get:
+      description: 管理员查看全部快速入口，可按 status 过滤。
+      parameters:
+      - description: 状态：1=启用，0=停用；不传返回全部
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 快速入口列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取快速入口失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员获取快速入口列表
+      tags:
+      - admin-quick-entries
+    post:
+      consumes:
+      - application/json
+      description: 管理员新增一个快速入口。
+      parameters:
+      - description: 快速入口
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateQuickEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 快速入口
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 新增快速入口失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员新增快速入口
+      tags:
+      - admin-quick-entries
+  /admin/quick-entries/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员部分更新一个快速入口。
+      parameters:
+      - description: 快速入口 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 快速入口
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateQuickEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 快速入口
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 快速入口不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 编辑快速入口失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员编辑快速入口
+      tags:
+      - admin-quick-entries
+  /admin/quick-entries/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员更新快速入口状态，1=启用，0=停用。
+      parameters:
+      - description: 快速入口 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateQuickEntryStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 快速入口
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 快速入口不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新快速入口状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员启停快速入口
+      tags:
+      - admin-quick-entries
+  /admin/quick-entries/sort:
+    put:
+      consumes:
+      - application/json
+      description: 管理员批量更新快速入口排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortQuickEntriesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新快速入口排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新快速入口排序
+      tags:
+      - admin-quick-entries
+  /admin/recommendations:
+    get:
+      description: 管理员查看全部今日推荐，可按 status 过滤。
+      parameters:
+      - description: 状态：1=启用，0=停用；不传返回全部
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 今日推荐列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取今日推荐失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员获取今日推荐列表
+      tags:
+      - admin-recommendations
+    post:
+      consumes:
+      - application/json
+      description: 管理员新增一条今日推荐。
+      parameters:
+      - description: 今日推荐
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRecommendationItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 今日推荐
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 绑定资源不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 新增今日推荐失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员新增今日推荐
+      tags:
+      - admin-recommendations
+  /admin/recommendations/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员部分更新一条今日推荐。
+      parameters:
+      - description: 今日推荐 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 今日推荐
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRecommendationItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 今日推荐
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 今日推荐不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 编辑今日推荐失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员编辑今日推荐
+      tags:
+      - admin-recommendations
+  /admin/recommendations/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员更新今日推荐状态，1=启用，0=停用。
+      parameters:
+      - description: 今日推荐 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRecommendationItemStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 今日推荐
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 今日推荐不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新今日推荐状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员启停今日推荐
+      tags:
+      - admin-recommendations
+  /admin/recommendations/sort:
+    put:
+      consumes:
+      - application/json
+      description: 管理员批量更新今日推荐排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortRecommendationItemsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新今日推荐排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新今日推荐排序
+      tags:
+      - admin-recommendations
   /auth/logout:
     post:
       description: '清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials:
@@ -184,6 +1281,451 @@ paths:
       summary: 发起 Keycloak SSO 登录
       tags:
       - auth
+  /carousel-slides:
+    get:
+      description: 返回当前用户可见、启用且处于有效时间窗口内的幻灯片。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 幻灯片列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取幻灯片失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取幻灯片
+      tags:
+      - carousel-slides
+  /common-tools:
+    get:
+      description: 返回当前用户星标的常用工具，按个人排序展示。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 常用工具列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取常用工具失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取我的常用工具
+      tags:
+      - common-tools
+    post:
+      consumes:
+      - application/json
+      description: 将一个资源加入当前用户常用工具；重复添加会更新排序值。
+      parameters:
+      - description: 常用工具
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddCommonToolRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 常用工具
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 添加常用工具失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 添加星标常用工具
+      tags:
+      - common-tools
+  /common-tools/{resourceId}:
+    delete:
+      description: 从当前用户常用工具中移除指定资源。
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: resourceId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 取消常用工具失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 取消星标常用工具
+      tags:
+      - common-tools
+  /common-tools/sort:
+    put:
+      consumes:
+      - application/json
+      description: 批量更新当前用户常用工具排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortCommonToolsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新常用工具排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 更新我的常用工具排序
+      tags:
+      - common-tools
+  /quick-entries:
+    get:
+      description: 返回当前用户可见且启用的快速入口。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 快速入口列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取快速入口失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取快速入口
+      tags:
+      - quick-entries
+  /recommendations:
+    get:
+      description: 返回当前用户可见且启用的今日推荐，按 sort_order 升序排列。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 今日推荐列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取今日推荐失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取今日推荐
+      tags:
+      - recommendations
+  /resource-categories:
+    get:
+      description: 返回资源中心启用状态的分类，按 sort_order 升序排列。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分类列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取资源分类失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取资源分类列表
+      tags:
+      - resources
+  /resources:
+    get:
+      description: 返回已发布资源列表，支持按分类、推荐状态和分页筛选。
+      parameters:
+      - description: 分类 ID
+        in: query
+        name: category_id
+        type: integer
+      - description: 分类 code；all 或空表示全部
+        in: query
+        name: category_code
+        type: string
+      - description: 是否只看推荐资源
+        in: query
+        name: featured
+        type: boolean
+      - description: 页码，默认 1
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量，默认 20，最大 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分页列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取资源列表失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取资源列表
+      tags:
+      - resources
+  /resources/{identifier}:
+    get:
+      description: 通过资源 ID 或 slug 获取已发布资源详情。
+      parameters:
+      - description: 资源 ID 或 slug
+        in: path
+        name: identifier
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源详情
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取资源详情失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取资源详情
+      tags:
+      - resources
+  /resources/search:
+    get:
+      description: 按关键词搜索已发布资源。该接口不写入搜索历史，前端可在搜索成功后调用 POST /search-history 记录。
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: 页码，默认 1
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量，默认 20，最大 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分页列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 搜索关键词不能为空
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 搜索资源失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 搜索资源
+      tags:
+      - resources
+  /search-history:
+    delete:
+      description: 清空当前用户全部搜索历史。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 清空结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 清空搜索历史失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 清空搜索历史
+      tags:
+      - search-history
+    post:
+      consumes:
+      - application/json
+      description: 记录当前用户的一次搜索；同一用户同一关键词会累加 searchCount 并更新时间。
+      parameters:
+      - description: 搜索历史记录
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordSearchHistoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 搜索历史
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 记录搜索历史失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 记录搜索历史
+      tags:
+      - search-history
+  /search-history/recent:
+    get:
+      description: 返回当前用户最近搜索历史，默认 4 条，最大 20 条。
+      parameters:
+      - description: 返回数量，默认 4，最大 20
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最近搜索历史
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取搜索历史失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 获取最近搜索历史
+      tags:
+      - search-history
   /users/me:
     get:
       description: '前端路由权限判断接口。浏览器登录后会自动携带 HttpOnly Cookie，前端必须使用 credentials: "include"；也兼容

@@ -34,6 +34,19 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	if err != nil {
 		log.Fatalf("认证模块初始化失败: %v", err)
 	}
+	resourceRepo := repository.NewResourceRepository(db)
+	resourceService := service.NewResourceService(resourceRepo)
+	searchHistoryRepo := repository.NewSearchHistoryRepository(db)
+	searchHistoryService := service.NewSearchHistoryService(searchHistoryRepo)
+	commonToolRepo := repository.NewCommonToolRepository(db)
+	commonToolService := service.NewCommonToolService(commonToolRepo, resourceRepo)
+	quickEntryRepo := repository.NewQuickEntryRepository(db)
+	quickEntryService := service.NewQuickEntryService(quickEntryRepo, userRepo)
+	recommendationRepo := repository.NewRecommendationItemRepository(db)
+	recommendationService := service.NewRecommendationItemService(recommendationRepo, userRepo, resourceRepo)
+	carouselSlideRepo := repository.NewCarouselSlideRepository(db)
+	carouselSlideService := service.NewCarouselSlideService(carouselSlideRepo, userRepo)
+	resourceHandler := handler.NewResourceHandler(resourceService, searchHistoryService, commonToolService, quickEntryService, recommendationService, carouselSlideService)
 
 	api := r.Group("/api/v1")
 
@@ -55,6 +68,63 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	private.Use(middleware.Auth(cfg.JWTSecret, cfg.AuthCookieName))
 	{
 		private.GET("/users/me", userHandler.Me)
+		private.GET("/resource-categories", resourceHandler.ListCategories)
+
+		resources := private.Group("/resources")
+		{
+			resources.GET("", resourceHandler.ListResources)
+			resources.GET("/search", resourceHandler.SearchResources)
+			resources.GET("/:identifier", resourceHandler.GetResource)
+		}
+
+		searchHistory := private.Group("/search-history")
+		{
+			searchHistory.POST("", resourceHandler.RecordSearchHistory)
+			searchHistory.GET("/recent", resourceHandler.ListRecentSearchHistory)
+			searchHistory.DELETE("", resourceHandler.ClearSearchHistory)
+		}
+
+		commonTools := private.Group("/common-tools")
+		{
+			commonTools.GET("", resourceHandler.ListCommonTools)
+			commonTools.POST("", resourceHandler.AddCommonTool)
+			commonTools.DELETE("/:resourceId", resourceHandler.RemoveCommonTool)
+			commonTools.PUT("/sort", resourceHandler.SortCommonTools)
+		}
+
+		private.GET("/quick-entries", resourceHandler.ListQuickEntries)
+		private.GET("/recommendations", resourceHandler.ListRecommendations)
+		private.GET("/carousel-slides", resourceHandler.ListCarouselSlides)
+
+		admin := private.Group("/admin")
+		admin.Use(middleware.RequireAdmin(userRepo))
+
+		adminQuickEntries := admin.Group("/quick-entries")
+		{
+			adminQuickEntries.GET("", resourceHandler.AdminListQuickEntries)
+			adminQuickEntries.POST("", resourceHandler.AdminCreateQuickEntry)
+			adminQuickEntries.PATCH("/:id", resourceHandler.AdminUpdateQuickEntry)
+			adminQuickEntries.PUT("/sort", resourceHandler.AdminSortQuickEntries)
+			adminQuickEntries.PATCH("/:id/status", resourceHandler.AdminUpdateQuickEntryStatus)
+		}
+
+		adminRecommendations := admin.Group("/recommendations")
+		{
+			adminRecommendations.GET("", resourceHandler.AdminListRecommendations)
+			adminRecommendations.POST("", resourceHandler.AdminCreateRecommendation)
+			adminRecommendations.PATCH("/:id", resourceHandler.AdminUpdateRecommendation)
+			adminRecommendations.PUT("/sort", resourceHandler.AdminSortRecommendations)
+			adminRecommendations.PATCH("/:id/status", resourceHandler.AdminUpdateRecommendationStatus)
+		}
+
+		adminCarouselSlides := admin.Group("/carousel-slides")
+		{
+			adminCarouselSlides.GET("", resourceHandler.AdminListCarouselSlides)
+			adminCarouselSlides.POST("", resourceHandler.AdminCreateCarouselSlide)
+			adminCarouselSlides.PATCH("/:id", resourceHandler.AdminUpdateCarouselSlide)
+			adminCarouselSlides.PUT("/sort", resourceHandler.AdminSortCarouselSlides)
+			adminCarouselSlides.PATCH("/:id/status", resourceHandler.AdminUpdateCarouselSlideStatus)
+		}
 	}
 
 	return r

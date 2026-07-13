@@ -1,13 +1,1063 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入 HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。",
+        "description": "Wormhole 后端服务 API 文档。Keycloak SSO 模式下，前端通过 /auth/sso/login 发起登录，后端写入 HttpOnly Cookie；前端鉴权判断请调用 /users/me 并携带 credentials: include。普通业务接口要求登录，/admin 开头的管理接口额外要求当前用户拥有 admin 角色。",
         "title": "Wormhole Backend API",
         "contact": {},
         "version": "1.0"
     },
     "basePath": "/api/v1",
     "paths": {
+        "/admin/carousel-slides": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员查看全部幻灯片，可按 status 过滤。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-carousel-slides"
+                ],
+                "summary": "管理员获取幻灯片列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态：1=启用，0=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "幻灯片列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取幻灯片失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员新增一张幻灯片。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-carousel-slides"
+                ],
+                "summary": "管理员新增幻灯片",
+                "parameters": [
+                    {
+                        "description": "幻灯片",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCarouselSlideRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "幻灯片",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增幻灯片失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/carousel-slides/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员批量更新幻灯片排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-carousel-slides"
+                ],
+                "summary": "管理员更新幻灯片排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortCarouselSlidesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新幻灯片排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/carousel-slides/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员部分更新一张幻灯片。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-carousel-slides"
+                ],
+                "summary": "管理员编辑幻灯片",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "幻灯片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "幻灯片",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCarouselSlideRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "幻灯片",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "幻灯片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "编辑幻灯片失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/carousel-slides/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员更新幻灯片状态，1=启用，0=停用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-carousel-slides"
+                ],
+                "summary": "管理员启停幻灯片",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "幻灯片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCarouselSlideStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "幻灯片",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "幻灯片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新幻灯片状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/quick-entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员查看全部快速入口，可按 status 过滤。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-quick-entries"
+                ],
+                "summary": "管理员获取快速入口列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态：1=启用，0=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "快速入口列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取快速入口失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员新增一个快速入口。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-quick-entries"
+                ],
+                "summary": "管理员新增快速入口",
+                "parameters": [
+                    {
+                        "description": "快速入口",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateQuickEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "快速入口",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增快速入口失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/quick-entries/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员批量更新快速入口排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-quick-entries"
+                ],
+                "summary": "管理员更新快速入口排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortQuickEntriesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新快速入口排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/quick-entries/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员部分更新一个快速入口。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-quick-entries"
+                ],
+                "summary": "管理员编辑快速入口",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "快速入口 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "快速入口",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateQuickEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "快速入口",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "快速入口不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "编辑快速入口失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/quick-entries/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员更新快速入口状态，1=启用，0=停用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-quick-entries"
+                ],
+                "summary": "管理员启停快速入口",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "快速入口 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateQuickEntryStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "快速入口",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "快速入口不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新快速入口状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/recommendations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员查看全部今日推荐，可按 status 过滤。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-recommendations"
+                ],
+                "summary": "管理员获取今日推荐列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态：1=启用，0=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "今日推荐列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取今日推荐失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员新增一条今日推荐。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-recommendations"
+                ],
+                "summary": "管理员新增今日推荐",
+                "parameters": [
+                    {
+                        "description": "今日推荐",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateRecommendationItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "今日推荐",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "绑定资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增今日推荐失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/recommendations/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员批量更新今日推荐排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-recommendations"
+                ],
+                "summary": "管理员更新今日推荐排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortRecommendationItemsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新今日推荐排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/recommendations/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员部分更新一条今日推荐。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-recommendations"
+                ],
+                "summary": "管理员编辑今日推荐",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "今日推荐 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "今日推荐",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateRecommendationItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "今日推荐",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "今日推荐不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "编辑今日推荐失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/recommendations/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员更新今日推荐状态，1=启用，0=停用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-recommendations"
+                ],
+                "summary": "管理员启停今日推荐",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "今日推荐 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateRecommendationItemStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "今日推荐",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "今日推荐不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新今日推荐状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/logout": {
             "post": {
                 "description": "清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: \"include\"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。",
@@ -145,6 +1195,731 @@
                 }
             }
         },
+        "/carousel-slides": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回当前用户可见、启用且处于有效时间窗口内的幻灯片。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "carousel-slides"
+                ],
+                "summary": "获取幻灯片",
+                "responses": {
+                    "200": {
+                        "description": "幻灯片列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取幻灯片失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/common-tools": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回当前用户星标的常用工具，按个人排序展示。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "common-tools"
+                ],
+                "summary": "获取我的常用工具",
+                "responses": {
+                    "200": {
+                        "description": "常用工具列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取常用工具失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "将一个资源加入当前用户常用工具；重复添加会更新排序值。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "common-tools"
+                ],
+                "summary": "添加星标常用工具",
+                "parameters": [
+                    {
+                        "description": "常用工具",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AddCommonToolRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "常用工具",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "添加常用工具失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/common-tools/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "批量更新当前用户常用工具排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "common-tools"
+                ],
+                "summary": "更新我的常用工具排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortCommonToolsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新常用工具排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/common-tools/{resourceId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "从当前用户常用工具中移除指定资源。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "common-tools"
+                ],
+                "summary": "取消星标常用工具",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源 ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "取消常用工具失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/quick-entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回当前用户可见且启用的快速入口。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quick-entries"
+                ],
+                "summary": "获取快速入口",
+                "responses": {
+                    "200": {
+                        "description": "快速入口列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取快速入口失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/recommendations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回当前用户可见且启用的今日推荐，按 sort_order 升序排列。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recommendations"
+                ],
+                "summary": "获取今日推荐",
+                "responses": {
+                    "200": {
+                        "description": "今日推荐列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取今日推荐失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/resource-categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回资源中心启用状态的分类，按 sort_order 升序排列。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "获取资源分类列表",
+                "responses": {
+                    "200": {
+                        "description": "资源分类列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取资源分类失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回已发布资源列表，支持按分类、推荐状态和分页筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "获取资源列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "分类 ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类 code；all 或空表示全部",
+                        "name": "category_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否只看推荐资源",
+                        "name": "featured",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取资源列表失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "按关键词搜索已发布资源。该接口不写入搜索历史，前端可在搜索成功后调用 POST /search-history 记录。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "搜索资源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "搜索关键词不能为空",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "搜索资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/{identifier}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "通过资源 ID 或 slug 获取已发布资源详情。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "获取资源详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "资源 ID 或 slug",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源详情",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取资源详情失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/search-history": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "记录当前用户的一次搜索；同一用户同一关键词会累加 searchCount 并更新时间。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search-history"
+                ],
+                "summary": "记录搜索历史",
+                "parameters": [
+                    {
+                        "description": "搜索历史记录",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RecordSearchHistoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "搜索历史",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "记录搜索历史失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "清空当前用户全部搜索历史。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search-history"
+                ],
+                "summary": "清空搜索历史",
+                "responses": {
+                    "200": {
+                        "description": "清空结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "清空搜索历史失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/search-history/recent": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "返回当前用户最近搜索历史，默认 4 条，最大 20 条。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search-history"
+                ],
+                "summary": "获取最近搜索历史",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "返回数量，默认 4，最大 20",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最近搜索历史",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取搜索历史失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me": {
             "get": {
                 "security": [
@@ -187,6 +1962,248 @@
         }
     },
     "definitions": {
+        "dto.AddCommonToolRequest": {
+            "type": "object",
+            "required": [
+                "resourceId"
+            ],
+            "properties": {
+                "resourceId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.CarouselSlideSortItem": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.CommonToolSortItem": {
+            "type": "object",
+            "required": [
+                "resourceId"
+            ],
+            "properties": {
+                "resourceId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.CreateCarouselSlideRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "title"
+            ],
+            "properties": {
+                "autoplaySeconds": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "background": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "#6D28D9"
+                },
+                "buttonText": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "立即查看"
+                },
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "ai-console"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "重塑工具、对比性能、生成报告。"
+                },
+                "endsAt": {
+                    "type": "string",
+                    "example": "2026-07-19T11:30:00Z"
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/banner.png"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "startsAt": {
+                    "type": "string",
+                    "example": "2026-07-12T11:30:00Z"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "看板"
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/ai-console"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "AI 助手控制台"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.CreateQuickEntryRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "targetUrl",
+                "title"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "github"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "代码托管平台"
+                },
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Git"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/github.png"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://github.com"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "GitHub"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.CreateRecommendationItemRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Cl"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/icon.png"
+                },
+                "publishedAt": {
+                    "type": "string",
+                    "example": "2026-07-12T11:30:00Z"
+                },
+                "resourceId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "sourceName": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "Anthropic"
+                },
+                "sourceUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://www.anthropic.com"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Anthropic"
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/article"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Claude 3.5：工程师需要了解的要点"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "dto.ErrorAPIResponse": {
             "type": "object",
             "properties": {
@@ -253,6 +2270,341 @@
                 }
             }
         },
+        "dto.QuickEntrySortItem": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.RecommendationItemSortItem": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.RecordSearchHistoryRequest": {
+            "type": "object",
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "lastResultCount": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "query": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Claude"
+                }
+            }
+        },
+        "dto.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "可以维护资源中心配置"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "管理员"
+                }
+            }
+        },
+        "dto.SortCarouselSlidesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CarouselSlideSortItem"
+                    }
+                }
+            }
+        },
+        "dto.SortCommonToolsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CommonToolSortItem"
+                    }
+                }
+            }
+        },
+        "dto.SortQuickEntriesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.QuickEntrySortItem"
+                    }
+                }
+            }
+        },
+        "dto.SortRecommendationItemsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RecommendationItemSortItem"
+                    }
+                }
+            }
+        },
+        "dto.UpdateCarouselSlideRequest": {
+            "type": "object",
+            "properties": {
+                "autoplaySeconds": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "background": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "#6D28D9"
+                },
+                "buttonText": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "立即查看"
+                },
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "ai-console"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "重塑工具、对比性能、生成报告。"
+                },
+                "endsAt": {
+                    "type": "string",
+                    "example": "2026-07-19T11:30:00Z"
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/banner.png"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "startsAt": {
+                    "type": "string",
+                    "example": "2026-07-12T11:30:00Z"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "看板"
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/ai-console"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "AI 助手控制台"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.UpdateCarouselSlideStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.UpdateQuickEntryRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "github"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "代码托管平台"
+                },
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Git"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/github.png"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://github.com"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "GitHub"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.UpdateQuickEntryStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.UpdateRecommendationItemRequest": {
+            "type": "object",
+            "properties": {
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Cl"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/icon.png"
+                },
+                "publishedAt": {
+                    "type": "string",
+                    "example": "2026-07-12T11:30:00Z"
+                },
+                "resourceId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "sourceName": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "Anthropic"
+                },
+                "sourceUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://www.anthropic.com"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Anthropic"
+                },
+                "targetUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://example.com/article"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Claude 3.5：工程师需要了解的要点"
+                },
+                "visibleRoleCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.UpdateRecommendationItemStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "dto.UserAPIResponse": {
             "type": "object",
             "properties": {
@@ -296,9 +2648,34 @@
                     "type": "string",
                     "example": "Alice"
                 },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RoleResponse"
+                    }
+                },
                 "username": {
                     "type": "string",
                     "example": "alice"
+                }
+            }
+        },
+        "response.APIResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "error": {},
+                "message": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         }

@@ -16,34 +16,66 @@ import (
 )
 
 var (
-	Q        = new(Query)
-	Role     *role
-	User     *user
-	UserRole *userRole
+	Q                  = new(Query)
+	CarouselSlide      *carouselSlide
+	QuickEntry         *quickEntry
+	RecommendationItem *recommendationItem
+	Resource           *resource
+	ResourceCategory   *resourceCategory
+	Role               *role
+	SearchHistory      *searchHistory
+	User               *user
+	UserCommonTool     *userCommonTool
+	UserRole           *userRole
+	WorkspaceChannel   *workspaceChannel
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
+	CarouselSlide = &Q.CarouselSlide
+	QuickEntry = &Q.QuickEntry
+	RecommendationItem = &Q.RecommendationItem
+	Resource = &Q.Resource
+	ResourceCategory = &Q.ResourceCategory
 	Role = &Q.Role
+	SearchHistory = &Q.SearchHistory
 	User = &Q.User
+	UserCommonTool = &Q.UserCommonTool
 	UserRole = &Q.UserRole
+	WorkspaceChannel = &Q.WorkspaceChannel
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:       db,
-		Role:     newRole(db, opts...),
-		User:     newUser(db, opts...),
-		UserRole: newUserRole(db, opts...),
+		db:                 db,
+		CarouselSlide:      newCarouselSlide(db, opts...),
+		QuickEntry:         newQuickEntry(db, opts...),
+		RecommendationItem: newRecommendationItem(db, opts...),
+		Resource:           newResource(db, opts...),
+		ResourceCategory:   newResourceCategory(db, opts...),
+		Role:               newRole(db, opts...),
+		SearchHistory:      newSearchHistory(db, opts...),
+		User:               newUser(db, opts...),
+		UserCommonTool:     newUserCommonTool(db, opts...),
+		UserRole:           newUserRole(db, opts...),
+		WorkspaceChannel:   newWorkspaceChannel(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	Role     role
-	User     user
-	UserRole userRole
+	CarouselSlide      carouselSlide
+	QuickEntry         quickEntry
+	RecommendationItem recommendationItem
+	Resource           resource
+	ResourceCategory   resourceCategory
+	Role               role
+	SearchHistory      searchHistory
+	User               user
+	UserCommonTool     userCommonTool
+	UserRole           userRole
+	WorkspaceChannel   workspaceChannel
 }
 
 func (q *Query) Available() bool { return q.db != nil }
@@ -52,10 +84,18 @@ func (q *Query) UnderlyingDB() *gorm.DB { return q.db }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		Role:     q.Role.clone(db),
-		User:     q.User.clone(db),
-		UserRole: q.UserRole.clone(db),
+		db:                 db,
+		CarouselSlide:      q.CarouselSlide.clone(db),
+		QuickEntry:         q.QuickEntry.clone(db),
+		RecommendationItem: q.RecommendationItem.clone(db),
+		Resource:           q.Resource.clone(db),
+		ResourceCategory:   q.ResourceCategory.clone(db),
+		Role:               q.Role.clone(db),
+		SearchHistory:      q.SearchHistory.clone(db),
+		User:               q.User.clone(db),
+		UserCommonTool:     q.UserCommonTool.clone(db),
+		UserRole:           q.UserRole.clone(db),
+		WorkspaceChannel:   q.WorkspaceChannel.clone(db),
 	}
 }
 
@@ -69,24 +109,48 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		Role:     q.Role.replaceDB(db),
-		User:     q.User.replaceDB(db),
-		UserRole: q.UserRole.replaceDB(db),
+		db:                 db,
+		CarouselSlide:      q.CarouselSlide.replaceDB(db),
+		QuickEntry:         q.QuickEntry.replaceDB(db),
+		RecommendationItem: q.RecommendationItem.replaceDB(db),
+		Resource:           q.Resource.replaceDB(db),
+		ResourceCategory:   q.ResourceCategory.replaceDB(db),
+		Role:               q.Role.replaceDB(db),
+		SearchHistory:      q.SearchHistory.replaceDB(db),
+		User:               q.User.replaceDB(db),
+		UserCommonTool:     q.UserCommonTool.replaceDB(db),
+		UserRole:           q.UserRole.replaceDB(db),
+		WorkspaceChannel:   q.WorkspaceChannel.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	Role     IRoleDo
-	User     IUserDo
-	UserRole IUserRoleDo
+	CarouselSlide      ICarouselSlideDo
+	QuickEntry         IQuickEntryDo
+	RecommendationItem IRecommendationItemDo
+	Resource           IResourceDo
+	ResourceCategory   IResourceCategoryDo
+	Role               IRoleDo
+	SearchHistory      ISearchHistoryDo
+	User               IUserDo
+	UserCommonTool     IUserCommonToolDo
+	UserRole           IUserRoleDo
+	WorkspaceChannel   IWorkspaceChannelDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		Role:     q.Role.WithContext(ctx),
-		User:     q.User.WithContext(ctx),
-		UserRole: q.UserRole.WithContext(ctx),
+		CarouselSlide:      q.CarouselSlide.WithContext(ctx),
+		QuickEntry:         q.QuickEntry.WithContext(ctx),
+		RecommendationItem: q.RecommendationItem.WithContext(ctx),
+		Resource:           q.Resource.WithContext(ctx),
+		ResourceCategory:   q.ResourceCategory.WithContext(ctx),
+		Role:               q.Role.WithContext(ctx),
+		SearchHistory:      q.SearchHistory.WithContext(ctx),
+		User:               q.User.WithContext(ctx),
+		UserCommonTool:     q.UserCommonTool.WithContext(ctx),
+		UserRole:           q.UserRole.WithContext(ctx),
+		WorkspaceChannel:   q.WorkspaceChannel.WithContext(ctx),
 	}
 }
 

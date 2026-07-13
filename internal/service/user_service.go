@@ -93,28 +93,14 @@ func (s *userService) LoginWithKeycloak(ctx context.Context, identity keycloak.I
 	u, err := s.repo.FindByKeycloakID(ctx, identity.Subject)
 	switch {
 	case err == nil:
-		now := time.Now().UTC()
-		u.Email = optionalStr(trimRunes(identity.Email, maxEmailLength))
-		u.Nickname = optionalStr(trimRunes(displayName(identity), maxNicknameLength))
-		u.LastLoginAt = &now
-		if err := s.repo.UpdateKeycloakProfile(ctx, u); err != nil {
+		u, err = s.syncKeycloakProfile(ctx, u, identity)
+		if err != nil {
 			return dto.LoginResponse{}, err
 		}
 
 	case errors.Is(err, repository.ErrUserNotFound):
-		username, usernameErr := s.newKeycloakUsername(ctx, identity)
-		if usernameErr != nil {
-			return dto.LoginResponse{}, usernameErr
-		}
-		now := time.Now().UTC()
-		u = &model.User{
-			KeycloakID:  identity.Subject,
-			Username:    username,
-			Email:       optionalStr(trimRunes(identity.Email, maxEmailLength)),
-			Nickname:    optionalStr(trimRunes(displayName(identity), maxNicknameLength)),
-			LastLoginAt: &now,
-		}
-		if err := s.repo.Create(ctx, u); err != nil {
+		u, err = s.createKeycloakUser(ctx, identity)
+		if err != nil {
 			return dto.LoginResponse{}, err
 		}
 
@@ -123,6 +109,43 @@ func (s *userService) LoginWithKeycloak(ctx context.Context, identity keycloak.I
 	}
 
 	return s.issueSession(u)
+}
+
+func (s *userService) createKeycloakUser(ctx context.Context, identity keycloak.Identity) (*model.User, error) {
+	username, err := s.newKeycloakUsername(ctx, identity)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	u := &model.User{
+		KeycloakID:  identity.Subject,
+		Username:    username,
+		Email:       optionalStr(trimRunes(identity.Email, maxEmailLength)),
+		Nickname:    optionalStr(trimRunes(displayName(identity), maxNicknameLength)),
+		LastLoginAt: &now,
+	}
+	if err := s.repo.Create(ctx, u); err != nil {
+		existing, findErr := s.repo.FindByKeycloakID(ctx, identity.Subject)
+		if findErr == nil {
+			return s.syncKeycloakProfile(ctx, existing, identity)
+		}
+		if errors.Is(findErr, repository.ErrUserNotFound) {
+			return nil, err
+		}
+		return nil, errors.Join(err, findErr)
+	}
+	return u, nil
+}
+
+func (s *userService) syncKeycloakProfile(ctx context.Context, u *model.User, identity keycloak.Identity) (*model.User, error) {
+	now := time.Now().UTC()
+	u.Email = optionalStr(trimRunes(identity.Email, maxEmailLength))
+	u.Nickname = optionalStr(trimRunes(displayName(identity), maxNicknameLength))
+	u.LastLoginAt = &now
+	if err := s.repo.UpdateKeycloakProfile(ctx, u); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 func (s *userService) issueSession(u *model.User) (dto.LoginResponse, error) {
@@ -190,7 +213,11 @@ func (s *userService) Me(ctx context.Context) (dto.UserResponse, error) {
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
-	return toUserResponse(u), nil
+	roles, err := s.repo.FindRolesByUserID(ctx, uid)
+	if err != nil {
+		return dto.UserResponse{}, err
+	}
+	return toUserResponseWithRoles(u, roles), nil
 }
 
 func toUserResponse(u *model.User) dto.UserResponse {
@@ -199,7 +226,27 @@ func toUserResponse(u *model.User) dto.UserResponse {
 		Username: u.Username,
 		Email:    derefStr(u.Email),
 		Nickname: derefStr(u.Nickname),
+		Roles:    []dto.RoleResponse{},
 	}
+}
+
+func toUserResponseWithRoles(u *model.User, roles []model.Role) dto.UserResponse {
+	resp := toUserResponse(u)
+	resp.Roles = toRoleResponses(roles)
+	return resp
+}
+
+func toRoleResponses(roles []model.Role) []dto.RoleResponse {
+	resp := make([]dto.RoleResponse, 0, len(roles))
+	for _, role := range roles {
+		resp = append(resp, dto.RoleResponse{
+			ID:          role.ID,
+			Code:        role.Code,
+			Name:        role.Name,
+			Description: derefStr(role.Description),
+		})
+	}
+	return resp
 }
 
 // optionalStr 把空字符串视为 NULL，非空返回其指针。

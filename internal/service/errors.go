@@ -19,6 +19,24 @@ var (
 	ErrInvalidKeycloakIdentity = errors.New("invalid Keycloak identity")
 	// ErrKeycloakUsernameConflict 无法为首次 SSO 用户安全分配唯一的本地用户名。
 	ErrKeycloakUsernameConflict = errors.New("Keycloak username conflict")
+	// ErrForbidden 当前用户没有执行该操作的权限。
+	ErrForbidden = errors.New("forbidden")
+	// ErrQuickEntryNotFound 快速入口不存在。
+	ErrQuickEntryNotFound = errors.New("quick entry not found")
+	// ErrInvalidQuickEntry 快速入口参数不合法。
+	ErrInvalidQuickEntry = errors.New("invalid quick entry")
+	// ErrInvalidStatus 状态值不合法。
+	ErrInvalidStatus = errors.New("invalid status")
+	// ErrRecommendationItemNotFound 今日推荐不存在。
+	ErrRecommendationItemNotFound = errors.New("recommendation item not found")
+	// ErrInvalidRecommendationItem 今日推荐参数不合法。
+	ErrInvalidRecommendationItem = errors.New("invalid recommendation item")
+	// ErrCarouselSlideNotFound 幻灯片不存在。
+	ErrCarouselSlideNotFound = errors.New("carousel slide not found")
+	// ErrInvalidCarouselSlide 幻灯片参数不合法。
+	ErrInvalidCarouselSlide = errors.New("invalid carousel slide")
+	// ErrInvalidTimeRange 时间窗口不合法。
+	ErrInvalidTimeRange = errors.New("invalid time range")
 )
 
 // currentUserID 从 context 取当前登录用户 ID，取不到返回 ErrUnauthenticated。
