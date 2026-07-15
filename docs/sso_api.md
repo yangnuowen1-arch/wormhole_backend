@@ -273,6 +273,124 @@ window.location.href = "/login";
 
 ---
 
+## 5. 管理员用户管理
+
+以下接口都要求当前登录用户拥有 `admin` 角色；请求同样要携带 `credentials: "include"`（或 axios 的 `withCredentials: true`）。
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| `GET` | `/admin/users` | 获取全部本地用户，包含已停用用户和角色 |
+| `GET` | `/admin/users/{id}` | 获取单个用户详情 |
+| `POST` | `/admin/users` | 创建本地用户并分配角色 |
+| `PATCH` | `/admin/users/{id}` | 更新用户名、邮箱、昵称、头像或状态 |
+| `DELETE` | `/admin/users/{id}` | 逻辑删除（停用）用户 |
+| `PUT` | `/admin/users/{id}/roles` | 完整替换用户角色 |
+
+用户列表的 `data` 是数组，每一项包含 `id`、`keycloakId`、`username`、`email`、`nickname`、`avatar`、`status`（`1` 为启用，`0` 为停用）和 `roles`。
+
+新增用户示例：
+
+```http
+POST /api/v1/admin/users
+Content-Type: application/json
+
+{
+  "keycloakId": "65b336b8-b4c5-4bce-bb36-7831fc22b641",
+  "username": "alice",
+  "email": "alice@example.com",
+  "nickname": "Alice",
+  "roleCodes": ["user"]
+}
+```
+
+在 Keycloak SSO 模式下，`keycloakId` 必须是该用户在 Keycloak 中已有账号的 `sub`；本服务只管理本地业务资料和角色，不会代为创建或删除 Keycloak 账号。未传 `roleCodes` 时自动授予 `user` 角色。
+
+更新示例（未传字段保持不变；邮箱、昵称、头像传空字符串可清空）：
+
+```http
+PATCH /api/v1/admin/users/42
+Content-Type: application/json
+
+{
+  "nickname": "Alice Chen",
+  "status": 1
+}
+```
+
+删除调用会将本地账号停用，而不是抹除其 Keycloak subject；已签发的应用会话会被后端拒绝，也不会在该用户下次 SSO 登录时重新生成一个本地账号。管理员不能停用、删除自己，也不能通过角色接口移除自己的 `admin` 角色。
+
+---
+
+## 6. 管理员分配用户角色
+
+```http
+PUT /admin/users/{id}/roles
+```
+
+例如把 ID 为 `42` 的用户设为管理员和普通用户：
+
+```http
+PUT /api/v1/admin/users/42/roles
+Content-Type: application/json
+
+{
+  "roleCodes": ["admin", "user"]
+}
+```
+
+该接口要求当前登录用户已有 `admin` 角色。`roleCodes` 会完整替换目标用户原有的角色，必须至少传入一个已存在的角色编码；内置角色为 `admin`、`user`。
+
+前端调用示例：
+
+```ts
+await api.put("/admin/users/42/roles", {
+  roleCodes: ["admin", "user"],
+});
+```
+
+成功时返回更新后的用户资料和角色列表；目标用户不存在返回 `40401`，角色不存在返回 `40402`，非管理员返回 `40301`。
+
+---
+
+## 7. 系统公告（通知）
+
+所有已登录用户都可以读取公告：
+
+```http
+GET /announcements
+```
+
+接口只返回已发布、已到发布时间且尚未到期的公告；置顶公告排在前面。用于顶部通知铃铛时可直接读取返回列表。
+
+管理员管理接口：
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| `GET` | `/admin/announcements?status=0\|1` | 查看全部公告，可筛选状态 |
+| `POST` | `/admin/announcements` | 新增公告 |
+| `PATCH` | `/admin/announcements/{id}` | 编辑内容、置顶、发布时间、到期时间或状态 |
+| `PATCH` | `/admin/announcements/{id}/status` | 快速发布或下架 |
+
+新增示例：
+
+```http
+POST /api/v1/admin/announcements
+Content-Type: application/json
+
+{
+  "title": "平台维护通知",
+  "content": "本周六 02:00-03:00 进行例行维护。",
+  "isPinned": true,
+  "status": 1,
+  "publishedAt": "2026-07-13T10:00:00Z",
+  "expiresAt": "2026-07-20T10:00:00Z"
+}
+```
+
+`status` 中 `1` 为发布，`0` 为草稿/下架。`publishedAt` 为空时立即生效，`expiresAt` 为空时永不过期；到期时间必须晚于发布时间。所有 `/admin/announcements` 接口都要求当前用户拥有 `admin` 角色。
+
+---
+
 ## 前端路由权限判断建议
 
 1. 应用启动时调用 `GET /users/me`。

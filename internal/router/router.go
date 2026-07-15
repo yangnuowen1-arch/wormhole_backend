@@ -35,7 +35,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		log.Fatalf("认证模块初始化失败: %v", err)
 	}
 	resourceRepo := repository.NewResourceRepository(db)
-	resourceService := service.NewResourceService(resourceRepo)
+	resourceService := service.NewResourceService(resourceRepo, userRepo)
 	searchHistoryRepo := repository.NewSearchHistoryRepository(db)
 	searchHistoryService := service.NewSearchHistoryService(searchHistoryRepo)
 	commonToolRepo := repository.NewCommonToolRepository(db)
@@ -46,7 +46,10 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	recommendationService := service.NewRecommendationItemService(recommendationRepo, userRepo, resourceRepo)
 	carouselSlideRepo := repository.NewCarouselSlideRepository(db)
 	carouselSlideService := service.NewCarouselSlideService(carouselSlideRepo, userRepo)
+	announcementRepo := repository.NewAnnouncementRepository(db)
+	announcementService := service.NewAnnouncementService(announcementRepo, userRepo)
 	resourceHandler := handler.NewResourceHandler(resourceService, searchHistoryService, commonToolService, quickEntryService, recommendationService, carouselSlideService)
+	announcementHandler := handler.NewAnnouncementHandler(announcementService)
 
 	api := r.Group("/api/v1")
 
@@ -65,7 +68,10 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// 需登录接口
 	private := api.Group("")
-	private.Use(middleware.Auth(cfg.JWTSecret, cfg.AuthCookieName))
+	private.Use(
+		middleware.Auth(cfg.JWTSecret, cfg.AuthCookieName),
+		middleware.RequireActiveUser(userRepo),
+	)
 	{
 		private.GET("/users/me", userHandler.Me)
 		private.GET("/resource-categories", resourceHandler.ListCategories)
@@ -95,9 +101,44 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		private.GET("/quick-entries", resourceHandler.ListQuickEntries)
 		private.GET("/recommendations", resourceHandler.ListRecommendations)
 		private.GET("/carousel-slides", resourceHandler.ListCarouselSlides)
+		private.GET("/announcements", announcementHandler.ListVisible)
 
 		admin := private.Group("/admin")
 		admin.Use(middleware.RequireAdmin(userRepo))
+		admin.GET("/users", userHandler.ListUsers)
+		admin.POST("/users", userHandler.CreateUser)
+		admin.GET("/users/:id", userHandler.GetUser)
+		admin.PATCH("/users/:id", userHandler.UpdateUser)
+		admin.DELETE("/users/:id", userHandler.DeleteUser)
+		admin.PUT("/users/:id/roles", userHandler.AssignRoles)
+
+		adminAnnouncements := admin.Group("/announcements")
+		{
+			adminAnnouncements.GET("", announcementHandler.AdminList)
+			adminAnnouncements.POST("", announcementHandler.AdminCreate)
+			adminAnnouncements.PATCH("/:id", announcementHandler.AdminUpdate)
+			adminAnnouncements.PATCH("/:id/status", announcementHandler.AdminUpdateStatus)
+		}
+
+		adminResourceCategories := admin.Group("/resource-categories")
+		{
+			adminResourceCategories.GET("", resourceHandler.AdminListResourceCategories)
+			adminResourceCategories.POST("", resourceHandler.AdminCreateResourceCategory)
+			adminResourceCategories.PATCH("/:id", resourceHandler.AdminUpdateResourceCategory)
+			adminResourceCategories.PUT("/sort", resourceHandler.AdminSortResourceCategories)
+			adminResourceCategories.PATCH("/:id/status", resourceHandler.AdminUpdateResourceCategoryStatus)
+			adminResourceCategories.DELETE("/:id", resourceHandler.AdminDeleteResourceCategory)
+		}
+
+		adminResources := admin.Group("/resources")
+		{
+			adminResources.GET("", resourceHandler.AdminListResources)
+			adminResources.POST("", resourceHandler.AdminCreateResource)
+			adminResources.PATCH("/:id", resourceHandler.AdminUpdateResource)
+			adminResources.PUT("/sort", resourceHandler.AdminSortResources)
+			adminResources.PATCH("/:id/status", resourceHandler.AdminUpdateResourceStatus)
+			adminResources.DELETE("/:id", resourceHandler.AdminDeleteResource)
+		}
 
 		adminQuickEntries := admin.Group("/quick-entries")
 		{

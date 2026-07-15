@@ -153,6 +153,401 @@ func (h *ResourceHandler) GetResource(c *gin.Context) {
 	response.Success(c, resource)
 }
 
+// AdminListResourceCategories 管理员获取资源分类列表。
+// @Summary 管理员获取资源分类列表
+// @Description 管理员查看全部资源分类，可按 status 过滤。
+// @Tags admin-resource-categories
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param status query int false "状态：1=启用，0=停用；不传返回全部"
+// @Success 200 {object} response.APIResponse "资源分类列表"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "获取资源分类失败"
+// @Router /admin/resource-categories [get]
+func (h *ResourceHandler) AdminListResourceCategories(c *gin.Context) {
+	status, err := optionalInt16Query(c, "status")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "status 参数错误", err.Error())
+		return
+	}
+	categories, err := h.resourceService.AdminListCategories(c.Request.Context(), status)
+	if err != nil {
+		h.writeServiceError(c, err, "获取资源分类失败")
+		return
+	}
+	response.Success(c, categories)
+}
+
+// AdminCreateResourceCategory 管理员新增资源分类。
+// @Summary 管理员新增资源分类
+// @Description 管理员新增一个全局资源分类。
+// @Tags admin-resource-categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param body body dto.CreateResourceCategoryRequest true "资源分类"
+// @Success 200 {object} response.APIResponse "资源分类"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "新增资源分类失败"
+// @Router /admin/resource-categories [post]
+func (h *ResourceHandler) AdminCreateResourceCategory(c *gin.Context) {
+	var req dto.CreateResourceCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	category, err := h.resourceService.CreateCategory(c.Request.Context(), req)
+	if err != nil {
+		h.writeServiceError(c, err, "新增资源分类失败")
+		return
+	}
+	response.Success(c, category)
+}
+
+// AdminUpdateResourceCategory 管理员编辑资源分类。
+// @Summary 管理员编辑资源分类
+// @Description 管理员部分更新一个全局资源分类。
+// @Tags admin-resource-categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源分类 ID"
+// @Param body body dto.UpdateResourceCategoryRequest true "资源分类"
+// @Success 200 {object} response.APIResponse "资源分类"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源分类不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "编辑资源分类失败"
+// @Router /admin/resource-categories/{id} [patch]
+func (h *ResourceHandler) AdminUpdateResourceCategory(c *gin.Context) {
+	id, err := pathInt32(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源分类 ID 参数错误", err.Error())
+		return
+	}
+	var req dto.UpdateResourceCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	category, err := h.resourceService.UpdateCategory(c.Request.Context(), id, req)
+	if err != nil {
+		h.writeServiceError(c, err, "编辑资源分类失败")
+		return
+	}
+	response.Success(c, category)
+}
+
+// AdminSortResourceCategories 管理员更新资源分类排序。
+// @Summary 管理员更新资源分类排序
+// @Description 管理员批量更新资源分类排序。
+// @Tags admin-resource-categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param body body dto.SortResourceCategoriesRequest true "排序项"
+// @Success 200 {object} response.APIResponse "排序结果"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "更新资源分类排序失败"
+// @Router /admin/resource-categories/sort [put]
+func (h *ResourceHandler) AdminSortResourceCategories(c *gin.Context) {
+	var req dto.SortResourceCategoriesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	if err := h.resourceService.SortCategories(c.Request.Context(), req); err != nil {
+		h.writeServiceError(c, err, "更新资源分类排序失败")
+		return
+	}
+	response.Success(c, gin.H{"sorted": true})
+}
+
+// AdminUpdateResourceCategoryStatus 管理员启停资源分类。
+// @Summary 管理员启停资源分类
+// @Description 管理员更新资源分类状态，1=启用，0=停用。
+// @Tags admin-resource-categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源分类 ID"
+// @Param body body dto.UpdateResourceCategoryStatusRequest true "状态"
+// @Success 200 {object} response.APIResponse "资源分类"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源分类不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "更新资源分类状态失败"
+// @Router /admin/resource-categories/{id}/status [patch]
+func (h *ResourceHandler) AdminUpdateResourceCategoryStatus(c *gin.Context) {
+	id, err := pathInt32(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源分类 ID 参数错误", err.Error())
+		return
+	}
+	var req dto.UpdateResourceCategoryStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	category, err := h.resourceService.UpdateCategoryStatus(c.Request.Context(), id, req.Status)
+	if err != nil {
+		h.writeServiceError(c, err, "更新资源分类状态失败")
+		return
+	}
+	response.Success(c, category)
+}
+
+// AdminDeleteResourceCategory 管理员删除资源分类。
+// @Summary 管理员删除资源分类
+// @Description 物理删除资源分类；该分类下的资源会保留，但其分类关联会被清空。
+// @Tags admin-resource-categories
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源分类 ID"
+// @Success 200 {object} response.APIResponse "删除结果"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源分类不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "删除资源分类失败"
+// @Router /admin/resource-categories/{id} [delete]
+func (h *ResourceHandler) AdminDeleteResourceCategory(c *gin.Context) {
+	id, err := pathInt32(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源分类 ID 参数错误", err.Error())
+		return
+	}
+	if err := h.resourceService.DeleteCategory(c.Request.Context(), id); err != nil {
+		h.writeServiceError(c, err, "删除资源分类失败")
+		return
+	}
+	response.Success(c, gin.H{"deleted": true})
+}
+
+// AdminListResources 管理员获取资源列表。
+// @Summary 管理员获取资源列表
+// @Description 管理员查看全部资源，可按分类、推荐状态、发布状态和分页筛选。
+// @Tags admin-resources
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param category_id query int false "分类 ID"
+// @Param category_code query string false "分类 code；all 或空表示全部"
+// @Param featured query bool false "是否只看推荐资源"
+// @Param status query int false "状态：1=发布，0=隐藏；不传返回全部"
+// @Param page query int false "页码，默认 1"
+// @Param pageSize query int false "每页数量，默认 20，最大 100"
+// @Success 200 {object} response.APIResponse "资源分页列表"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "获取资源列表失败"
+// @Router /admin/resources [get]
+func (h *ResourceHandler) AdminListResources(c *gin.Context) {
+	page, pageSize := paginationFromQuery(c)
+	categoryID, err := optionalInt32Query(c, "category_id", "categoryId")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "分类 ID 参数错误", err.Error())
+		return
+	}
+	featured, err := optionalBoolQuery(c, "featured")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "featured 参数错误", err.Error())
+		return
+	}
+	status, err := optionalInt16Query(c, "status")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "status 参数错误", err.Error())
+		return
+	}
+
+	result, err := h.resourceService.AdminListResources(c.Request.Context(), service.ResourceListOptions{
+		CategoryID:   categoryID,
+		CategoryCode: stringQuery(c, "category_code", "categoryCode"),
+		Featured:     featured,
+		Status:       status,
+		Page:         page,
+		PageSize:     pageSize,
+	})
+	if err != nil {
+		h.writeServiceError(c, err, "获取资源列表失败")
+		return
+	}
+	writePage(c, result.Items, result.Page, result.PageSize, result.Total)
+}
+
+// AdminCreateResource 管理员新增资源。
+// @Summary 管理员新增资源
+// @Description 管理员新增一个全局资源中心条目。
+// @Tags admin-resources
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param body body dto.CreateResourceRequest true "资源"
+// @Success 200 {object} response.APIResponse "资源"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源分类不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "新增资源失败"
+// @Router /admin/resources [post]
+func (h *ResourceHandler) AdminCreateResource(c *gin.Context) {
+	var req dto.CreateResourceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	resource, err := h.resourceService.CreateResource(c.Request.Context(), req)
+	if err != nil {
+		h.writeServiceError(c, err, "新增资源失败")
+		return
+	}
+	response.Success(c, resource)
+}
+
+// AdminUpdateResource 管理员编辑资源。
+// @Summary 管理员编辑资源
+// @Description 管理员部分更新一个全局资源中心条目。
+// @Tags admin-resources
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源 ID"
+// @Param body body dto.UpdateResourceRequest true "资源"
+// @Success 200 {object} response.APIResponse "资源"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源不存在或资源分类不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "编辑资源失败"
+// @Router /admin/resources/{id} [patch]
+func (h *ResourceHandler) AdminUpdateResource(c *gin.Context) {
+	id, err := pathInt64(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源 ID 参数错误", err.Error())
+		return
+	}
+	var req dto.UpdateResourceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	resource, err := h.resourceService.UpdateResource(c.Request.Context(), id, req)
+	if err != nil {
+		h.writeServiceError(c, err, "编辑资源失败")
+		return
+	}
+	response.Success(c, resource)
+}
+
+// AdminSortResources 管理员更新资源排序。
+// @Summary 管理员更新资源排序
+// @Description 管理员批量更新资源排序。
+// @Tags admin-resources
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param body body dto.SortResourcesRequest true "排序项"
+// @Success 200 {object} response.APIResponse "排序结果"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "更新资源排序失败"
+// @Router /admin/resources/sort [put]
+func (h *ResourceHandler) AdminSortResources(c *gin.Context) {
+	var req dto.SortResourcesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	if err := h.resourceService.SortResources(c.Request.Context(), req); err != nil {
+		h.writeServiceError(c, err, "更新资源排序失败")
+		return
+	}
+	response.Success(c, gin.H{"sorted": true})
+}
+
+// AdminUpdateResourceStatus 管理员发布或隐藏资源。
+// @Summary 管理员更新资源状态
+// @Description 管理员更新资源状态，1=发布，0=隐藏。
+// @Tags admin-resources
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源 ID"
+// @Param body body dto.UpdateResourceStatusRequest true "状态"
+// @Success 200 {object} response.APIResponse "资源"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "更新资源状态失败"
+// @Router /admin/resources/{id}/status [patch]
+func (h *ResourceHandler) AdminUpdateResourceStatus(c *gin.Context) {
+	id, err := pathInt64(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源 ID 参数错误", err.Error())
+		return
+	}
+	var req dto.UpdateResourceStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	resource, err := h.resourceService.UpdateResourceStatus(c.Request.Context(), id, req.Status)
+	if err != nil {
+		h.writeServiceError(c, err, "更新资源状态失败")
+		return
+	}
+	response.Success(c, resource)
+}
+
+// AdminDeleteResource 管理员删除资源。
+// @Summary 管理员删除资源
+// @Description 物理删除资源；常用工具关联会被级联清理，推荐项会保留但解除该资源关联。
+// @Tags admin-resources
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "资源 ID"
+// @Success 200 {object} response.APIResponse "删除结果"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "资源不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "删除资源失败"
+// @Router /admin/resources/{id} [delete]
+func (h *ResourceHandler) AdminDeleteResource(c *gin.Context) {
+	id, err := pathInt64(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "资源 ID 参数错误", err.Error())
+		return
+	}
+	if err := h.resourceService.DeleteResource(c.Request.Context(), id); err != nil {
+		h.writeServiceError(c, err, "删除资源失败")
+		return
+	}
+	response.Success(c, gin.H{"deleted": true})
+}
+
 // RecordSearchHistory 记录搜索历史。
 // @Summary 记录搜索历史
 // @Description 记录当前用户的一次搜索；同一用户同一关键词会累加 searchCount 并更新时间。
@@ -882,6 +1277,8 @@ func (h *ResourceHandler) writeServiceError(c *gin.Context, err error, fallbackM
 		response.Error(c, http.StatusForbidden, 40301, "没有权限", nil)
 	case errors.Is(err, service.ErrResourceNotFound):
 		response.Error(c, http.StatusNotFound, 40401, "资源不存在", nil)
+	case errors.Is(err, service.ErrResourceCategoryNotFound):
+		response.Error(c, http.StatusNotFound, 40406, "资源分类不存在", nil)
 	case errors.Is(err, service.ErrQuickEntryNotFound):
 		response.Error(c, http.StatusNotFound, 40402, "快速入口不存在", nil)
 	case errors.Is(err, service.ErrRecommendationItemNotFound):
@@ -889,6 +1286,7 @@ func (h *ResourceHandler) writeServiceError(c *gin.Context, err error, fallbackM
 	case errors.Is(err, service.ErrCarouselSlideNotFound):
 		response.Error(c, http.StatusNotFound, 40404, "幻灯片不存在", nil)
 	case errors.Is(err, service.ErrInvalidQuickEntry), errors.Is(err, service.ErrInvalidStatus),
+		errors.Is(err, service.ErrInvalidResource), errors.Is(err, service.ErrInvalidResourceCategory),
 		errors.Is(err, service.ErrInvalidRecommendationItem), errors.Is(err, service.ErrInvalidCarouselSlide),
 		errors.Is(err, service.ErrInvalidTimeRange):
 		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())

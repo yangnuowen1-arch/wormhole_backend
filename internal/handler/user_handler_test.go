@@ -1,15 +1,20 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yang/wormhole_backend/internal/config"
+	"github.com/yang/wormhole_backend/internal/dto"
+	"github.com/yang/wormhole_backend/internal/keycloak"
+	"github.com/yang/wormhole_backend/internal/service"
 )
 
 func TestStartSSOUsesStateSpecificCookies(t *testing.T) {
@@ -95,6 +100,50 @@ func TestCallbackSSOUsesMatchingStateCookie(t *testing.T) {
 	}
 }
 
+func TestAssignRolesReturnsUpdatedUser(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	stub := &userServiceStub{
+		assignRoles: func(_ context.Context, userID int64, req dto.AssignUserRolesRequest) (dto.UserResponse, error) {
+			if userID != 8 {
+				t.Fatalf("user ID = %d, want 8", userID)
+			}
+			if len(req.RoleCodes) != 1 || req.RoleCodes[0] != "admin" {
+				t.Fatalf("role codes = %v, want [admin]", req.RoleCodes)
+			}
+			return dto.UserResponse{
+				ID:       8,
+				Username: "alice",
+				Roles:    []dto.RoleResponse{{ID: 1, Code: "admin", Name: "管理员"}},
+			}, nil
+		},
+	}
+	h, err := NewUserHandler(stub, &config.Config{})
+	if err != nil {
+		t.Fatalf("NewUserHandler returned error: %v", err)
+	}
+	router := gin.New()
+	router.PUT("/api/v1/admin/users/:id/roles", h.AssignRoles)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/admin/users/8/roles", strings.NewReader(`{"roleCodes":["admin"]}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+	var body struct {
+		Code int              `json:"code"`
+		Data dto.UserResponse `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Code != 0 || body.Data.ID != 8 || len(body.Data.Roles) != 1 || body.Data.Roles[0].Code != "admin" {
+		t.Fatalf("response = %+v, want updated admin user", body)
+	}
+}
+
 func newSSOTestRouter(t *testing.T) (*gin.Engine, *UserHandler, func()) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -176,3 +225,72 @@ func performStartSSO(t *testing.T, router *gin.Engine, cookies ...*http.Cookie) 
 	t.Fatal("start SSO response did not set a state cookie")
 	return "", nil
 }
+
+type userServiceStub struct {
+	assignRoles func(context.Context, int64, dto.AssignUserRolesRequest) (dto.UserResponse, error)
+	listUsers   func(context.Context) ([]dto.UserResponse, error)
+	getUser     func(context.Context, int64) (dto.UserResponse, error)
+	createUser  func(context.Context, dto.CreateAdminUserRequest) (dto.UserResponse, error)
+	updateUser  func(context.Context, int64, dto.UpdateAdminUserRequest) (dto.UserResponse, error)
+	deleteUser  func(context.Context, int64) error
+}
+
+func (s *userServiceStub) Register(ctx context.Context, req dto.RegisterRequest) (dto.UserResponse, error) {
+	return dto.UserResponse{}, nil
+}
+
+func (s *userServiceStub) Login(ctx context.Context, req dto.LoginRequest) (dto.LoginResponse, error) {
+	return dto.LoginResponse{}, nil
+}
+
+func (s *userServiceStub) LoginWithKeycloak(ctx context.Context, identity keycloak.Identity) (dto.LoginResponse, error) {
+	return dto.LoginResponse{}, nil
+}
+
+func (s *userServiceStub) Me(ctx context.Context) (dto.UserResponse, error) {
+	return dto.UserResponse{}, nil
+}
+
+func (s *userServiceStub) ListUsers(ctx context.Context) ([]dto.UserResponse, error) {
+	if s.listUsers == nil {
+		return nil, nil
+	}
+	return s.listUsers(ctx)
+}
+
+func (s *userServiceStub) GetUser(ctx context.Context, userID int64) (dto.UserResponse, error) {
+	if s.getUser == nil {
+		return dto.UserResponse{}, nil
+	}
+	return s.getUser(ctx, userID)
+}
+
+func (s *userServiceStub) CreateUser(ctx context.Context, req dto.CreateAdminUserRequest) (dto.UserResponse, error) {
+	if s.createUser == nil {
+		return dto.UserResponse{}, nil
+	}
+	return s.createUser(ctx, req)
+}
+
+func (s *userServiceStub) UpdateUser(ctx context.Context, userID int64, req dto.UpdateAdminUserRequest) (dto.UserResponse, error) {
+	if s.updateUser == nil {
+		return dto.UserResponse{}, nil
+	}
+	return s.updateUser(ctx, userID, req)
+}
+
+func (s *userServiceStub) DeleteUser(ctx context.Context, userID int64) error {
+	if s.deleteUser == nil {
+		return nil
+	}
+	return s.deleteUser(ctx, userID)
+}
+
+func (s *userServiceStub) AssignRoles(ctx context.Context, userID int64, req dto.AssignUserRolesRequest) (dto.UserResponse, error) {
+	if s.assignRoles == nil {
+		return dto.UserResponse{}, nil
+	}
+	return s.assignRoles(ctx, userID, req)
+}
+
+var _ service.UserService = (*userServiceStub)(nil)

@@ -17,6 +17,12 @@ const (
 	statusEnabled  int16 = 1
 )
 
+// UserRoleFinder 提供当前用户角色查询能力。
+// 将管理权限校验依赖收窄到此接口，避免非用户业务服务依赖完整用户仓储。
+type UserRoleFinder interface {
+	FindRolesByUserID(ctx context.Context, userID int64) ([]model.Role, error)
+}
+
 // CommonToolService 用户常用工具业务接口。
 type CommonToolService interface {
 	Add(ctx context.Context, req dto.AddCommonToolRequest) (dto.CommonToolResponse, error)
@@ -327,7 +333,7 @@ func (s *quickEntryService) roleCodes(ctx context.Context, userID int64) ([]stri
 	return roleCodes(ctx, s.userRepo, userID)
 }
 
-func requireAdminRole(ctx context.Context, userRepo repository.UserRepository) (int64, error) {
+func requireAdminRole(ctx context.Context, userRepo UserRoleFinder) (int64, error) {
 	userID, err := currentUserID(ctx)
 	if err != nil {
 		return 0, err
@@ -344,7 +350,7 @@ func requireAdminRole(ctx context.Context, userRepo repository.UserRepository) (
 	return 0, ErrForbidden
 }
 
-func roleCodes(ctx context.Context, userRepo repository.UserRepository, userID int64) ([]string, error) {
+func roleCodes(ctx context.Context, userRepo UserRoleFinder, userID int64) ([]string, error) {
 	roles, err := userRepo.FindRolesByUserID(ctx, userID)
 	if err != nil {
 		return nil, err

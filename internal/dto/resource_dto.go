@@ -7,6 +7,7 @@ type ResourceCategoryResponse struct {
 	Name        string `json:"name" example:"AI 与机器学习"`
 	Description string `json:"description" example:"AI 工具与模型资源"`
 	SortOrder   int32  `json:"sortOrder" example:"10"`
+	Status      int16  `json:"status" example:"1"`
 }
 
 // ResourceCategorySummary 资源分类摘要。
@@ -36,6 +37,101 @@ type ResourceResponse struct {
 	Metadata      map[string]any           `json:"metadata"`
 	IsFeatured    bool                     `json:"isFeatured" example:"true"`
 	SortOrder     int32                    `json:"sortOrder" example:"10"`
+	Status        int16                    `json:"status" example:"1"`
+}
+
+// CreateResourceCategoryRequest 新增资源分类请求。
+type CreateResourceCategoryRequest struct {
+	Code        string `json:"code" binding:"required,max=64" example:"ai"`
+	Name        string `json:"name" binding:"required,max=64" example:"AI 与机器学习"`
+	Description string `json:"description" binding:"omitempty,max=255" example:"AI 工具与模型资源"`
+	SortOrder   int32  `json:"sortOrder" example:"10"`
+	Status      *int16 `json:"status" example:"1"`
+}
+
+// UpdateResourceCategoryRequest 编辑资源分类请求。
+type UpdateResourceCategoryRequest struct {
+	Code        *string `json:"code" binding:"omitempty,max=64" example:"ai"`
+	Name        *string `json:"name" binding:"omitempty,max=64" example:"AI 与机器学习"`
+	Description *string `json:"description" binding:"omitempty,max=255" example:"AI 工具与模型资源"`
+	SortOrder   *int32  `json:"sortOrder" example:"10"`
+	Status      *int16  `json:"status" example:"1"`
+}
+
+// ResourceCategorySortItem 资源分类排序项。
+type ResourceCategorySortItem struct {
+	ID        int32 `json:"id" binding:"required" example:"1"`
+	SortOrder int32 `json:"sortOrder" example:"10"`
+}
+
+// SortResourceCategoriesRequest 资源分类排序请求。
+type SortResourceCategoriesRequest struct {
+	Items []ResourceCategorySortItem `json:"items" binding:"required,dive"`
+}
+
+// UpdateResourceCategoryStatusRequest 更新资源分类状态请求。
+type UpdateResourceCategoryStatusRequest struct {
+	Status int16 `json:"status" example:"1"`
+}
+
+// CreateResourceRequest 新增资源请求。
+type CreateResourceRequest struct {
+	CategoryID    *int32         `json:"categoryId" example:"1"`
+	Slug          string         `json:"slug" binding:"required,max=128" example:"claude"`
+	Name          string         `json:"name" binding:"required,max=128" example:"Claude"`
+	IconURL       string         `json:"iconUrl" binding:"omitempty,max=255" example:"https://example.com/claude.png"`
+	IconText      string         `json:"iconText" binding:"omitempty,max=16" example:"Cl"`
+	WebsiteURL    string         `json:"websiteUrl" binding:"omitempty,max=512" example:"https://claude.ai"`
+	Summary       string         `json:"summary" binding:"omitempty,max=255" example:"AI 助手"`
+	Description   string         `json:"description" example:"企业资源与模型生态入口"`
+	ResourceType  string         `json:"resourceType" binding:"omitempty,max=32" example:"tool"`
+	Provider      string         `json:"provider" binding:"omitempty,max=128" example:"Anthropic"`
+	ModelCount    int32          `json:"modelCount" example:"12"`
+	FollowerCount int32          `json:"followerCount" example:"968"`
+	Badge         string         `json:"badge" binding:"omitempty,max=32" example:"Enterprise"`
+	Tags          []string       `json:"tags"`
+	Metadata      map[string]any `json:"metadata"`
+	IsFeatured    bool           `json:"isFeatured" example:"true"`
+	SortOrder     int32          `json:"sortOrder" example:"10"`
+	Status        *int16         `json:"status" example:"1"`
+}
+
+// UpdateResourceRequest 编辑资源请求。
+type UpdateResourceRequest struct {
+	CategoryID    *int32          `json:"categoryId" example:"1"`
+	Slug          *string         `json:"slug" binding:"omitempty,max=128" example:"claude"`
+	Name          *string         `json:"name" binding:"omitempty,max=128" example:"Claude"`
+	IconURL       *string         `json:"iconUrl" binding:"omitempty,max=255" example:"https://example.com/claude.png"`
+	IconText      *string         `json:"iconText" binding:"omitempty,max=16" example:"Cl"`
+	WebsiteURL    *string         `json:"websiteUrl" binding:"omitempty,max=512" example:"https://claude.ai"`
+	Summary       *string         `json:"summary" binding:"omitempty,max=255" example:"AI 助手"`
+	Description   *string         `json:"description" example:"企业资源与模型生态入口"`
+	ResourceType  *string         `json:"resourceType" binding:"omitempty,max=32" example:"tool"`
+	Provider      *string         `json:"provider" binding:"omitempty,max=128" example:"Anthropic"`
+	ModelCount    *int32          `json:"modelCount" example:"12"`
+	FollowerCount *int32          `json:"followerCount" example:"968"`
+	Badge         *string         `json:"badge" binding:"omitempty,max=32" example:"Enterprise"`
+	Tags          []string        `json:"tags"`
+	Metadata      *map[string]any `json:"metadata"`
+	IsFeatured    *bool           `json:"isFeatured" example:"true"`
+	SortOrder     *int32          `json:"sortOrder" example:"10"`
+	Status        *int16          `json:"status" example:"1"`
+}
+
+// ResourceSortItem 资源排序项。
+type ResourceSortItem struct {
+	ID        int64 `json:"id" binding:"required" example:"1"`
+	SortOrder int32 `json:"sortOrder" example:"10"`
+}
+
+// SortResourcesRequest 资源排序请求。
+type SortResourcesRequest struct {
+	Items []ResourceSortItem `json:"items" binding:"required,dive"`
+}
+
+// UpdateResourceStatusRequest 更新资源状态请求。
+type UpdateResourceStatusRequest struct {
+	Status int16 `json:"status" example:"1"`
 }
 
 // CommonToolResponse 常用工具响应。

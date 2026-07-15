@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,6 +82,10 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			response.Error(c, http.StatusUnauthorized, 40101, "用户不存在", nil)
+			return
+		}
+		if errors.Is(err, service.ErrUserDisabled) {
+			response.Error(c, http.StatusForbidden, 40302, "账号已停用", nil)
 			return
 		}
 		response.Error(c, http.StatusInternalServerError, 50001, "登录失败", err.Error())
@@ -196,6 +201,10 @@ func (h *UserHandler) CallbackSSO(c *gin.Context) {
 	loginResp, err := h.service.LoginWithKeycloak(c.Request.Context(), identity)
 	if err != nil {
 		h.clearOIDCStateCookie(c, stateCookieName)
+		if errors.Is(err, service.ErrUserDisabled) {
+			response.Error(c, http.StatusForbidden, 40302, "账号已停用", nil)
+			return
+		}
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrInvalidKeycloakIdentity) || errors.Is(err, service.ErrKeycloakUsernameConflict) {
 			status = http.StatusBadRequest
@@ -241,10 +250,226 @@ func (h *UserHandler) Me(c *gin.Context) {
 			response.Error(c, http.StatusUnauthorized, 40101, "未登录，请先登录", nil)
 			return
 		}
+		if errors.Is(err, service.ErrUserDisabled) {
+			response.Error(c, http.StatusForbidden, 40302, "账号已停用", nil)
+			return
+		}
 		response.Error(c, http.StatusInternalServerError, 50001, "获取用户信息失败", err.Error())
 		return
 	}
 	response.Success(c, user)
+}
+
+// ListUsers 管理员获取全部用户。
+// @Summary 管理员获取全部用户
+// @Description 返回全部本地业务用户（包括已停用用户）及每位用户的角色。仅拥有 admin 角色的用户可调用。
+// @Tags admin-users
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Success 200 {object} dto.UserListAPIResponse "用户列表"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 500 {object} dto.ErrorAPIResponse "获取用户列表失败"
+// @Router /admin/users [get]
+func (h *UserHandler) ListUsers(c *gin.Context) {
+	users, err := h.service.ListUsers(c.Request.Context())
+	if err != nil {
+		h.writeAdminUserError(c, err, "获取用户列表失败")
+		return
+	}
+	response.Success(c, users)
+}
+
+// GetUser 管理员获取指定用户详情。
+// @Summary 管理员获取用户详情
+// @Tags admin-users
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "用户 ID"
+// @Success 200 {object} dto.UserAPIResponse "用户详情"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "用户不存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "获取用户失败"
+// @Router /admin/users/{id} [get]
+func (h *UserHandler) GetUser(c *gin.Context) {
+	userID, ok := h.adminUserID(c)
+	if !ok {
+		return
+	}
+	user, err := h.service.GetUser(c.Request.Context(), userID)
+	if err != nil {
+		h.writeAdminUserError(c, err, "获取用户失败")
+		return
+	}
+	response.Success(c, user)
+}
+
+// CreateUser 管理员创建用户。
+// @Summary 管理员创建用户
+// @Description 创建本地用户资料并分配角色；roleCodes 不传时默认分配 user。启用 Keycloak SSO 时，keycloakId 必须是已有 Keycloak 用户的 sub，本接口不会创建 Keycloak 账号。
+// @Tags admin-users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param body body dto.CreateAdminUserRequest true "用户"
+// @Success 201 {object} dto.UserAPIResponse "新建用户"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 409 {object} dto.ErrorAPIResponse "用户名或 Keycloak ID 已存在"
+// @Failure 500 {object} dto.ErrorAPIResponse "创建用户失败"
+// @Router /admin/users [post]
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	var req dto.CreateAdminUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	user, err := h.service.CreateUser(c.Request.Context(), req)
+	if err != nil {
+		h.writeAdminUserError(c, err, "创建用户失败")
+		return
+	}
+	response.Created(c, user)
+}
+
+// UpdateUser 管理员部分更新用户资料。
+// @Summary 管理员更新用户资料
+// @Description 可更新用户名、邮箱、昵称、头像和启用状态；角色请使用 PUT /admin/users/{id}/roles 完整替换。传空字符串可清空邮箱、昵称或头像。
+// @Tags admin-users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "用户 ID"
+// @Param body body dto.UpdateAdminUserRequest true "用户资料"
+// @Success 200 {object} dto.UserAPIResponse "更新后的用户"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "用户不存在"
+// @Failure 409 {object} dto.ErrorAPIResponse "用户名已存在或不能停用自己"
+// @Failure 500 {object} dto.ErrorAPIResponse "更新用户失败"
+// @Router /admin/users/{id} [patch]
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	userID, ok := h.adminUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.UpdateAdminUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+	user, err := h.service.UpdateUser(c.Request.Context(), userID, req)
+	if err != nil {
+		h.writeAdminUserError(c, err, "更新用户失败")
+		return
+	}
+	response.Success(c, user)
+}
+
+// DeleteUser 管理员逻辑删除用户。
+// @Summary 管理员删除用户
+// @Description 逻辑删除会将本地用户停用，而非删除 Keycloak 身份；已签发的会话会立即被拒绝，避免该身份下次 SSO 登录时被重新创建。
+// @Tags admin-users
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "用户 ID"
+// @Success 200 {object} dto.DeleteAdminUserAPIResponse "删除结果"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "用户不存在"
+// @Failure 409 {object} dto.ErrorAPIResponse "不能删除自己"
+// @Failure 500 {object} dto.ErrorAPIResponse "删除用户失败"
+// @Router /admin/users/{id} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	userID, ok := h.adminUserID(c)
+	if !ok {
+		return
+	}
+	if err := h.service.DeleteUser(c.Request.Context(), userID); err != nil {
+		h.writeAdminUserError(c, err, "删除用户失败")
+		return
+	}
+	response.Success(c, dto.DeleteAdminUserResponse{Deleted: true})
+}
+
+// AssignRoles 管理员为指定用户分配角色。
+// @Summary 管理员分配用户角色
+// @Description 使用 roleCodes 完整替换指定用户的角色集合；所有角色编码必须已存在，且至少提供一个角色。角色编码目前由系统维护，例如 admin、user。
+// @Tags admin-users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security CookieAuth
+// @Param id path int true "用户 ID"
+// @Param body body dto.AssignUserRolesRequest true "角色集合"
+// @Success 200 {object} dto.UserAPIResponse "更新后的用户信息"
+// @Failure 400 {object} dto.ErrorAPIResponse "参数错误"
+// @Failure 401 {object} dto.ErrorAPIResponse "未登录或登录已失效"
+// @Failure 403 {object} dto.ErrorAPIResponse "没有权限"
+// @Failure 404 {object} dto.ErrorAPIResponse "用户或角色不存在"
+// @Failure 409 {object} dto.ErrorAPIResponse "不能移除自己的管理员角色"
+// @Failure 500 {object} dto.ErrorAPIResponse "分配用户角色失败"
+// @Router /admin/users/{id}/roles [put]
+func (h *UserHandler) AssignRoles(c *gin.Context) {
+	userID, ok := h.adminUserID(c)
+	if !ok {
+		return
+	}
+
+	var req dto.AssignUserRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+		return
+	}
+
+	user, err := h.service.AssignRoles(c.Request.Context(), userID, req)
+	if err != nil {
+		h.writeAdminUserError(c, err, "分配用户角色失败")
+		return
+	}
+	response.Success(c, user)
+}
+
+func (h *UserHandler) adminUserID(c *gin.Context) (int64, bool) {
+	userID, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || userID <= 0 {
+		response.Error(c, http.StatusBadRequest, 40001, "用户 ID 参数错误", nil)
+		return 0, false
+	}
+	return userID, true
+}
+
+func (h *UserHandler) writeAdminUserError(c *gin.Context, err error, fallbackMessage string) {
+	switch {
+	case errors.Is(err, service.ErrUnauthenticated):
+		response.Error(c, http.StatusUnauthorized, 40101, "未登录，请先登录", nil)
+	case errors.Is(err, service.ErrUserDisabled):
+		response.Error(c, http.StatusForbidden, 40302, "账号已停用", nil)
+	case errors.Is(err, service.ErrForbidden):
+		response.Error(c, http.StatusForbidden, 40301, "没有权限", nil)
+	case errors.Is(err, service.ErrUserNotFound):
+		response.Error(c, http.StatusNotFound, 40401, "用户不存在", nil)
+	case errors.Is(err, service.ErrRoleNotFound):
+		response.Error(c, http.StatusNotFound, 40402, "角色不存在", nil)
+	case errors.Is(err, service.ErrUsernameTaken), errors.Is(err, service.ErrKeycloakIDTaken):
+		response.Error(c, http.StatusConflict, 40901, "用户名或 Keycloak ID 已存在", nil)
+	case errors.Is(err, service.ErrSelfUserModification):
+		response.Error(c, http.StatusConflict, 40902, "不能停用、删除自己或移除自己的管理员角色", nil)
+	case errors.Is(err, service.ErrInvalidRoleAssignment), errors.Is(err, service.ErrInvalidUser), errors.Is(err, service.ErrKeycloakIDRequired):
+		response.Error(c, http.StatusBadRequest, 40001, "参数错误", err.Error())
+	default:
+		response.Error(c, http.StatusInternalServerError, 50001, fallbackMessage, err.Error())
+	}
 }
 
 func (h *UserHandler) ssoReady() bool {

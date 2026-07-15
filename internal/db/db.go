@@ -246,7 +246,25 @@ CREATE TABLE IF NOT EXISTS workspace_channels (
 	CONSTRAINT fk_workspace_channels_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_workspace_channels_status_sort ON workspace_channels (status, sort_order, id);
-CREATE INDEX IF NOT EXISTS idx_workspace_channels_visible_role_codes ON workspace_channels USING GIN (visible_role_codes);`
+CREATE INDEX IF NOT EXISTS idx_workspace_channels_visible_role_codes ON workspace_channels USING GIN (visible_role_codes);
+
+CREATE TABLE IF NOT EXISTS announcements (
+	id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	title        VARCHAR(128) NOT NULL,
+	content      TEXT         NOT NULL,
+	is_pinned    BOOLEAN      NOT NULL DEFAULT FALSE,
+	status       SMALLINT     NOT NULL DEFAULT 1,
+	published_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	expires_at   TIMESTAMP,
+	created_by   BIGINT,
+	updated_by   BIGINT,
+	created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT fk_announcements_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+	CONSTRAINT fk_announcements_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_announcements_visibility ON announcements (status, is_pinned DESC, published_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_announcements_expires_at ON announcements (expires_at);`
 	if err := db.Exec(schemaSQL).Error; err != nil {
 		log.Fatalf("初始化数据库表失败: %v", err)
 	}

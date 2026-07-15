@@ -19,6 +19,28 @@ var (
 	ErrInvalidKeycloakIdentity = errors.New("invalid Keycloak identity")
 	// ErrKeycloakUsernameConflict 无法为首次 SSO 用户安全分配唯一的本地用户名。
 	ErrKeycloakUsernameConflict = errors.New("Keycloak username conflict")
+	// ErrUserNotFound 指定用户不存在。
+	ErrUserNotFound = errors.New("user not found")
+	// ErrRoleNotFound 请求中包含不存在的角色。
+	ErrRoleNotFound = errors.New("role not found")
+	// ErrInvalidRoleAssignment 角色分配参数不合法。
+	ErrInvalidRoleAssignment = errors.New("invalid role assignment")
+	// ErrInvalidUser 用户资料参数不合法。
+	ErrInvalidUser = errors.New("invalid user")
+	// ErrKeycloakIDRequired 启用 SSO 时管理员创建用户必须提供 Keycloak subject。
+	ErrKeycloakIDRequired = errors.New("Keycloak ID is required")
+	// ErrKeycloakIDTaken Keycloak subject 已绑定到另一位本地用户。
+	ErrKeycloakIDTaken = errors.New("Keycloak ID already taken")
+	// ErrUserDisabled 用户已被管理员停用。
+	ErrUserDisabled = errors.New("user disabled")
+	// ErrSelfUserModification 管理员不能停用、删除自己或移除自己的 admin 角色。
+	ErrSelfUserModification = errors.New("cannot modify own admin access")
+	// ErrAdminUserStoreUnavailable 管理端用户数据仓储未初始化。
+	ErrAdminUserStoreUnavailable = errors.New("admin user store unavailable")
+	// ErrAnnouncementNotFound 公告不存在。
+	ErrAnnouncementNotFound = errors.New("announcement not found")
+	// ErrInvalidAnnouncement 公告参数不合法。
+	ErrInvalidAnnouncement = errors.New("invalid announcement")
 	// ErrForbidden 当前用户没有执行该操作的权限。
 	ErrForbidden = errors.New("forbidden")
 	// ErrQuickEntryNotFound 快速入口不存在。
