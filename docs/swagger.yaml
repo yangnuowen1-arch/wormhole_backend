@@ -257,6 +257,100 @@ definitions:
     required:
     - title
     type: object
+  dto.CreateResourceCategoryRequest:
+    properties:
+      code:
+        example: ai
+        maxLength: 64
+        type: string
+      description:
+        example: AI 工具与模型资源
+        maxLength: 255
+        type: string
+      name:
+        example: AI 与机器学习
+        maxLength: 64
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  dto.CreateResourceRequest:
+    properties:
+      badge:
+        example: Enterprise
+        maxLength: 32
+        type: string
+      categoryId:
+        example: 1
+        type: integer
+      description:
+        example: 企业资源与模型生态入口
+        type: string
+      followerCount:
+        example: 968
+        type: integer
+      iconText:
+        example: Cl
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/claude.png
+        maxLength: 255
+        type: string
+      isFeatured:
+        example: true
+        type: boolean
+      metadata:
+        additionalProperties: {}
+        type: object
+      modelCount:
+        example: 12
+        type: integer
+      name:
+        example: Claude
+        maxLength: 128
+        type: string
+      provider:
+        example: Anthropic
+        maxLength: 128
+        type: string
+      resourceType:
+        example: tool
+        maxLength: 32
+        type: string
+      slug:
+        example: claude
+        maxLength: 128
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+      summary:
+        example: AI 助手
+        maxLength: 255
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      websiteUrl:
+        example: https://claude.ai
+        maxLength: 512
+        type: string
+    required:
+    - name
+    - slug
+    type: object
   dto.DeleteAdminUserAPIResponse:
     properties:
       code:
@@ -364,6 +458,28 @@ definitions:
     required:
     - query
     type: object
+  dto.ResourceCategorySortItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - id
+    type: object
+  dto.ResourceSortItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      sortOrder:
+        example: 10
+        type: integer
+    required:
+    - id
+    type: object
   dto.RoleResponse:
     properties:
       code:
@@ -411,6 +527,24 @@ definitions:
       items:
         items:
           $ref: '#/definitions/dto.RecommendationItemSortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.SortResourceCategoriesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ResourceCategorySortItem'
+        type: array
+    required:
+    - items
+    type: object
+  dto.SortResourcesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ResourceSortItem'
         type: array
     required:
     - items
@@ -616,6 +750,106 @@ definitions:
         type: array
     type: object
   dto.UpdateRecommendationItemStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
+  dto.UpdateResourceCategoryRequest:
+    properties:
+      code:
+        example: ai
+        maxLength: 64
+        type: string
+      description:
+        example: AI 工具与模型资源
+        maxLength: 255
+        type: string
+      name:
+        example: AI 与机器学习
+        maxLength: 64
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+    type: object
+  dto.UpdateResourceCategoryStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
+  dto.UpdateResourceRequest:
+    properties:
+      badge:
+        example: Enterprise
+        maxLength: 32
+        type: string
+      categoryId:
+        example: 1
+        type: integer
+      description:
+        example: 企业资源与模型生态入口
+        type: string
+      followerCount:
+        example: 968
+        type: integer
+      iconText:
+        example: Cl
+        maxLength: 16
+        type: string
+      iconUrl:
+        example: https://example.com/claude.png
+        maxLength: 255
+        type: string
+      isFeatured:
+        example: true
+        type: boolean
+      metadata:
+        additionalProperties: {}
+        type: object
+      modelCount:
+        example: 12
+        type: integer
+      name:
+        example: Claude
+        maxLength: 128
+        type: string
+      provider:
+        example: Anthropic
+        maxLength: 128
+        type: string
+      resourceType:
+        example: tool
+        maxLength: 32
+        type: string
+      slug:
+        example: claude
+        maxLength: 128
+        type: string
+      sortOrder:
+        example: 10
+        type: integer
+      status:
+        example: 1
+        type: integer
+      summary:
+        example: AI 助手
+        maxLength: 255
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      websiteUrl:
+        example: https://claude.ai
+        maxLength: 512
+        type: string
+    type: object
+  dto.UpdateResourceStatusRequest:
     properties:
       status:
         example: 1
@@ -1553,6 +1787,548 @@ paths:
       summary: 管理员更新今日推荐排序
       tags:
       - admin-recommendations
+  /admin/resource-categories:
+    get:
+      description: 管理员查看全部资源分类，可按 status 过滤。
+      parameters:
+      - description: 状态：1=启用，0=停用；不传返回全部
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分类列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取资源分类失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员获取资源分类列表
+      tags:
+      - admin-resource-categories
+    post:
+      consumes:
+      - application/json
+      description: 管理员新增一个全局资源分类。
+      parameters:
+      - description: 资源分类
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateResourceCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分类
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 新增资源分类失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员新增资源分类
+      tags:
+      - admin-resource-categories
+  /admin/resource-categories/{id}:
+    delete:
+      description: 物理删除资源分类；该分类下的资源会保留，但其分类关联会被清空。
+      parameters:
+      - description: 资源分类 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源分类不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 删除资源分类失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员删除资源分类
+      tags:
+      - admin-resource-categories
+    patch:
+      consumes:
+      - application/json
+      description: 管理员部分更新一个全局资源分类。
+      parameters:
+      - description: 资源分类 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 资源分类
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateResourceCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分类
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源分类不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 编辑资源分类失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员编辑资源分类
+      tags:
+      - admin-resource-categories
+  /admin/resource-categories/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员更新资源分类状态，1=启用，0=停用。
+      parameters:
+      - description: 资源分类 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateResourceCategoryStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分类
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源分类不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新资源分类状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员启停资源分类
+      tags:
+      - admin-resource-categories
+  /admin/resource-categories/sort:
+    put:
+      consumes:
+      - application/json
+      description: 管理员批量更新资源分类排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortResourceCategoriesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新资源分类排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新资源分类排序
+      tags:
+      - admin-resource-categories
+  /admin/resources:
+    get:
+      description: 管理员查看全部资源，可按分类、推荐状态、发布状态和分页筛选。
+      parameters:
+      - description: 分类 ID
+        in: query
+        name: category_id
+        type: integer
+      - description: 分类 code；all 或空表示全部
+        in: query
+        name: category_code
+        type: string
+      - description: 是否只看推荐资源
+        in: query
+        name: featured
+        type: boolean
+      - description: 状态：1=发布，0=隐藏；不传返回全部
+        in: query
+        name: status
+        type: integer
+      - description: 页码，默认 1
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量，默认 20，最大 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源分页列表
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 获取资源列表失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员获取资源列表
+      tags:
+      - admin-resources
+    post:
+      consumes:
+      - application/json
+      description: 管理员新增一个全局资源中心条目。
+      parameters:
+      - description: 资源
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源分类不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 新增资源失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员新增资源
+      tags:
+      - admin-resources
+  /admin/resources/{id}:
+    delete:
+      description: 物理删除资源；常用工具关联会被级联清理，推荐项会保留但解除该资源关联。
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 删除资源失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员删除资源
+      tags:
+      - admin-resources
+    patch:
+      consumes:
+      - application/json
+      description: 管理员部分更新一个全局资源中心条目。
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 资源
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源不存在或资源分类不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 编辑资源失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员编辑资源
+      tags:
+      - admin-resources
+  /admin/resources/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 管理员更新资源状态，1=发布，0=隐藏。
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateResourceStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新资源状态失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新资源状态
+      tags:
+      - admin-resources
+  /admin/resources/sort:
+    put:
+      consumes:
+      - application/json
+      description: 管理员批量更新资源排序。
+      parameters:
+      - description: 排序项
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortResourcesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序结果
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "401":
+          description: 未登录或登录已失效
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "403":
+          description: 没有权限
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "500":
+          description: 更新资源排序失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      summary: 管理员更新资源排序
+      tags:
+      - admin-resources
   /admin/users:
     get:
       description: 返回全部本地业务用户（包括已停用用户）及每位用户的角色。仅拥有 admin 角色的用户可调用。
@@ -1845,9 +2621,35 @@ paths:
       tags:
       - announcements
   /auth/logout:
+    get:
+      description: 前端必须使用 window.location.href 等浏览器跳转方式调用本接口，而不是 fetch。后端会清除本应用 Cookie，并
+        302 到 Keycloak end_session_endpoint；Keycloak 完成全局登出后会跳回 return_to。Keycloak
+        Client 必须将对应前端地址配置为 Valid post logout redirect URI。
+      parameters:
+      - default: /login
+        description: 登出完成后跳回的前端路径，只允许相对路径或 KEYCLOAK_FRONTEND_URL 同源绝对地址，例如 /login
+        in: query
+        name: return_to
+        type: string
+      responses:
+        "302":
+          description: Redirect to Keycloak end session endpoint
+          schema:
+            type: string
+        "404":
+          description: SSO 未启用
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+        "502":
+          description: 获取 Keycloak 登出地址失败
+          schema:
+            $ref: '#/definitions/dto.ErrorAPIResponse'
+      summary: 退出 SSO 登录
+      tags:
+      - auth
     post:
       description: '清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials:
-        "include"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。'
+        "include"。如需同时退出 Keycloak SSO，请通过浏览器跳转调用 GET /auth/logout。'
       produces:
       - application/json
       responses:

@@ -1347,6 +1347,868 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/resource-categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员查看全部资源分类，可按 status 过滤。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员获取资源分类列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态：1=启用，0=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分类列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取资源分类失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员新增一个全局资源分类。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员新增资源分类",
+                "parameters": [
+                    {
+                        "description": "资源分类",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateResourceCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分类",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增资源分类失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resource-categories/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员批量更新资源分类排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员更新资源分类排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortResourceCategoriesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新资源分类排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resource-categories/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "物理删除资源分类；该分类下的资源会保留，但其分类关联会被清空。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员删除资源分类",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源分类 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除资源分类失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员部分更新一个全局资源分类。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员编辑资源分类",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源分类 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "资源分类",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateResourceCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分类",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "编辑资源分类失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resource-categories/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员更新资源分类状态，1=启用，0=停用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resource-categories"
+                ],
+                "summary": "管理员启停资源分类",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源分类 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateResourceCategoryStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分类",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新资源分类状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resources": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员查看全部资源，可按分类、推荐状态、发布状态和分页筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员获取资源列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "分类 ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类 code；all 或空表示全部",
+                        "name": "category_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否只看推荐资源",
+                        "name": "featured",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态：1=发布，0=隐藏；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "获取资源列表失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员新增一个全局资源中心条目。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员新增资源",
+                "parameters": [
+                    {
+                        "description": "资源",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resources/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员批量更新资源排序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员更新资源排序",
+                "parameters": [
+                    {
+                        "description": "排序项",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortResourcesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新资源排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resources/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "物理删除资源；常用工具关联会被级联清理，推荐项会保留但解除该资源关联。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员删除资源",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员部分更新一个全局资源中心条目。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员编辑资源",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "资源",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在或资源分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "编辑资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/resources/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "管理员更新资源状态，1=发布，0=隐藏。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-resources"
+                ],
+                "summary": "管理员更新资源状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateResourceStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或登录已失效",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有权限",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新资源状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users": {
             "get": {
                 "security": [
@@ -1809,8 +2671,44 @@ const docTemplate = `{
             }
         },
         "/auth/logout": {
+            "get": {
+                "description": "前端必须使用 window.location.href 等浏览器跳转方式调用本接口，而不是 fetch。后端会清除本应用 Cookie，并 302 到 Keycloak end_session_endpoint；Keycloak 完成全局登出后会跳回 return_to。Keycloak Client 必须将对应前端地址配置为 Valid post logout redirect URI。",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "退出 SSO 登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "/login",
+                        "description": "登出完成后跳回的前端路径，只允许相对路径或 KEYCLOAK_FRONTEND_URL 同源绝对地址，例如 /login",
+                        "name": "return_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Keycloak end session endpoint",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "SSO 未启用",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "获取 Keycloak 登出地址失败",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorAPIResponse"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: \"include\"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。",
+                "description": "清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: \"include\"。如需同时退出 Keycloak SSO，请通过浏览器跳转调用 GET /auth/logout。",
                 "produces": [
                     "application/json"
                 ],
@@ -3058,6 +3956,130 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateResourceCategoryRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "name"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "ai"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "AI 工具与模型资源"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "AI 与机器学习"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.CreateResourceRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "badge": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "Enterprise"
+                },
+                "categoryId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "type": "string",
+                    "example": "企业资源与模型生态入口"
+                },
+                "followerCount": {
+                    "type": "integer",
+                    "example": 968
+                },
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Cl"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/claude.png"
+                },
+                "isFeatured": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelCount": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Claude"
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Anthropic"
+                },
+                "resourceType": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "tool"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "claude"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "AI 助手"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "websiteUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://claude.ai"
+                }
+            }
+        },
         "dto.DeleteAdminUserAPIResponse": {
             "type": "object",
             "properties": {
@@ -3210,6 +4232,38 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ResourceCategorySortItem": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.ResourceSortItem": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "dto.RoleResponse": {
             "type": "object",
             "properties": {
@@ -3283,6 +4337,34 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.RecommendationItemSortItem"
+                    }
+                }
+            }
+        },
+        "dto.SortResourceCategoriesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ResourceCategorySortItem"
+                    }
+                }
+            }
+        },
+        "dto.SortResourcesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ResourceSortItem"
                     }
                 }
             }
@@ -3557,6 +4639,140 @@ const docTemplate = `{
             }
         },
         "dto.UpdateRecommendationItemStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.UpdateResourceCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "ai"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "AI 工具与模型资源"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "AI 与机器学习"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.UpdateResourceCategoryStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.UpdateResourceRequest": {
+            "type": "object",
+            "properties": {
+                "badge": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "Enterprise"
+                },
+                "categoryId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "type": "string",
+                    "example": "企业资源与模型生态入口"
+                },
+                "followerCount": {
+                    "type": "integer",
+                    "example": 968
+                },
+                "iconText": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "Cl"
+                },
+                "iconUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "https://example.com/claude.png"
+                },
+                "isFeatured": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelCount": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Claude"
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "Anthropic"
+                },
+                "resourceType": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "tool"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "claude"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "AI 助手"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "websiteUrl": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "example": "https://claude.ai"
+                }
+            }
+        },
+        "dto.UpdateResourceStatusRequest": {
             "type": "object",
             "properties": {
                 "status": {

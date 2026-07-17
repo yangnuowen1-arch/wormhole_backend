@@ -230,46 +230,58 @@ const res = await api.get("/users/me");
 ## 4. 退出登录
 
 ```http
-POST /auth/logout
+GET /auth/logout?return_to=/login
 ```
 
 完整地址：
 
 ```text
-http://192.168.31.28:8081/api/v1/auth/logout
+http://192.168.31.28:8081/api/v1/auth/logout?return_to=/login
 ```
 
 ### 用途
 
-清除本应用的 `wormhole_session` Cookie。
+完整退出 Wormhole 和 Keycloak SSO：
 
-当前接口只退出 Wormhole 后端应用会话，不保证退出 Keycloak 全局会话。如果后续需要完整单点登出，可以再接 Keycloak `end_session_endpoint`。
+1. 清除本应用的 `wormhole_session` Cookie。
+2. 清除仅用于登出的已验证 ID Token Cookie。
+3. 302 跳转到 Keycloak 的 `end_session_endpoint`，由浏览器携带 Keycloak 域下的 SSO Cookie 完成全局登出。
+4. Keycloak 登出完成后，跳回 `return_to` 指定的前端页面。
+
+后端会自动附带已验证的 `id_token_hint`；前端不需要、也不应读取任何 SSO Token。
+
+在 Keycloak Client 配置中，需将前端地址加入 **Valid post logout redirect URIs**，例如：
+
+```text
+http://192.168.31.28:5173/*
+```
 
 ### 前端调用
 
-```ts
-await fetch("http://192.168.31.28:8081/api/v1/auth/logout", {
-  method: "POST",
-  credentials: "include",
-});
+不要用 `fetch` 或 axios。必须让浏览器进行顶层跳转，才能携带并注销 Keycloak 域下的 SSO Cookie：
 
-window.location.href = "/login";
+```ts
+window.location.href =
+  "http://192.168.31.28:8081/api/v1/auth/logout?return_to=/login";
 ```
 
 ### 成功响应
 
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "logged_out": true
-  },
-  "error": null,
-  "requestId": "5547e998-1127-4c9d-ae7e-f3508c42b96c",
-  "timestamp": "2026-07-10T16:30:01+08:00"
-}
+```http
+302 Found
+Set-Cookie: wormhole_session=; Max-Age=0; HttpOnly; Path=/
+Location: http://<keycloak>/realms/<realm>/protocol/openid-connect/logout?...
 ```
+
+### 仅清除本应用会话（可选）
+
+如确实只需要退出 Wormhole、保留 Keycloak SSO 登录态，可继续调用：
+
+```http
+POST /auth/logout
+```
+
+该请求需要 `credentials: "include"`，返回 `{ "data": { "logged_out": true } }`；下次发起 SSO 登录时，Keycloak 仍可能自动登录当前用户。
 
 ---
 

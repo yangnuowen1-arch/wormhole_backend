@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	oidcStateTTL        = 10 * time.Minute
-	oidcStateCookiePath = "/api/v1/auth/sso"
+	oidcStateTTL          = 10 * time.Minute
+	oidcStateCookiePath   = "/api/v1/auth/sso"
+	oidcIDTokenCookiePath = "/api/v1/auth"
 )
 
 // UserHandler 用户 HTTP 层。
@@ -191,7 +192,7 @@ func (h *UserHandler) CallbackSSO(c *gin.Context) {
 		return
 	}
 
-	identity, err := h.keycloak.ExchangeAndVerify(c.Request.Context(), code, loginState.Verifier, loginState.Nonce)
+	identity, idToken, err := h.keycloak.ExchangeAndVerifyWithIDToken(c.Request.Context(), code, loginState.Verifier, loginState.Nonce)
 	if err != nil {
 		h.clearOIDCStateCookie(c, stateCookieName)
 		response.Error(c, http.StatusBadGateway, 50202, "Keycloak token 校验失败", err.Error())
@@ -215,21 +216,50 @@ func (h *UserHandler) CallbackSSO(c *gin.Context) {
 
 	h.clearOIDCStateCookie(c, stateCookieName)
 	h.setCookie(c, h.cfg.AuthCookieName, loginResp.Token, h.cfg.JWTExpireHrs*3600, "/")
+	h.setCookie(c, h.keycloakIDTokenCookieName(), idToken, h.cfg.JWTExpireHrs*3600, oidcIDTokenCookiePath)
 	c.Redirect(http.StatusFound, h.safeReturnTo(loginState.ReturnTo))
 }
 
-// Logout 清除本应用会话 Cookie。Keycloak 单点登出可后续再接 end_session_endpoint。
+// Logout 清除本应用会话 Cookie，但不会终止 Keycloak 的全局 SSO 会话。
 // @Summary 退出登录
-// @Description 清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: "include"。当前接口只退出本应用会话，不一定退出 Keycloak 全局会话。
+// @Description 清除后端本应用 HttpOnly 会话 Cookie（默认 wormhole_session）。前端调用时必须带 credentials: "include"。如需同时退出 Keycloak SSO，请通过浏览器跳转调用 GET /auth/logout。
 // @Tags auth
 // @Produce json
 // @Success 200 {object} dto.LogoutAPIResponse "退出成功"
 // @Router /auth/logout [post]
 func (h *UserHandler) Logout(c *gin.Context) {
-	if h.cfg != nil {
-		h.clearCookie(c, h.cfg.AuthCookieName, "/")
-	}
+	h.clearLocalSessionCookies(c)
 	response.Success(c, gin.H{"logged_out": true})
+}
+
+// LogoutSSO 通过 Keycloak 的 end_session_endpoint 同时退出本应用和全局 SSO 会话。
+// @Summary 退出 SSO 登录
+// @Description 前端必须使用 window.location.href 等浏览器跳转方式调用本接口，而不是 fetch。后端会清除本应用 Cookie，并 302 到 Keycloak end_session_endpoint；Keycloak 完成全局登出后会跳回 return_to。Keycloak Client 必须将对应前端地址配置为 Valid post logout redirect URI。
+// @Tags auth
+// @Param return_to query string false "登出完成后跳回的前端路径，只允许相对路径或 KEYCLOAK_FRONTEND_URL 同源绝对地址，例如 /login" default(/login)
+// @Success 302 {string} string "Redirect to Keycloak end session endpoint"
+// @Failure 404 {object} dto.ErrorAPIResponse "SSO 未启用"
+// @Failure 502 {object} dto.ErrorAPIResponse "获取 Keycloak 登出地址失败"
+// @Router /auth/logout [get]
+func (h *UserHandler) LogoutSSO(c *gin.Context) {
+	if !h.ssoReady() {
+		response.Error(c, http.StatusNotFound, 40401, "SSO 未启用", nil)
+		return
+	}
+
+	returnTo := c.Query("return_to")
+	if strings.TrimSpace(returnTo) == "" {
+		returnTo = "/login"
+	}
+	idTokenHint, _ := c.Cookie(h.keycloakIDTokenCookieName())
+	logoutURL, err := h.keycloak.EndSessionURL(c.Request.Context(), idTokenHint, h.safeReturnTo(returnTo))
+	if err != nil {
+		response.Error(c, http.StatusBadGateway, 50203, "获取 Keycloak 登出地址失败", err.Error())
+		return
+	}
+
+	h.clearLocalSessionCookies(c)
+	c.Redirect(http.StatusFound, logoutURL)
 }
 
 // Me 获取当前登录用户信息
@@ -483,6 +513,28 @@ func (h *UserHandler) setCookie(c *gin.Context, name, value string, maxAge int, 
 
 func (h *UserHandler) clearCookie(c *gin.Context, name, path string) {
 	h.setCookie(c, name, "", -1, path)
+}
+
+func (h *UserHandler) clearLocalSessionCookies(c *gin.Context) {
+	if h == nil || h.cfg == nil {
+		return
+	}
+
+	h.clearCookie(c, h.cfg.AuthCookieName, "/")
+	h.clearCookie(c, h.keycloakIDTokenCookieName(), oidcIDTokenCookiePath)
+	h.clearCookie(c, h.cfg.KeycloakStateCookieName, oidcStateCookiePath)
+	for _, cookie := range c.Request.Cookies() {
+		if h.isOIDCStateCookieName(cookie.Name) {
+			h.clearCookie(c, cookie.Name, oidcStateCookiePath)
+		}
+	}
+}
+
+func (h *UserHandler) keycloakIDTokenCookieName() string {
+	if h != nil && h.cfg != nil && strings.TrimSpace(h.cfg.KeycloakIDTokenCookieName) != "" {
+		return h.cfg.KeycloakIDTokenCookieName
+	}
+	return "wormhole_oidc_id_token"
 }
 
 func (h *UserHandler) oidcStateCookieName(state string) string {

@@ -37,7 +37,10 @@ type Config struct {
 	KeycloakScopes          []string
 	KeycloakStateSecret     string
 	KeycloakStateCookieName string
-	KeycloakHTTPTimeout     time.Duration
+	// KeycloakIDTokenCookieName 保存已验证的 ID Token，仅用于发起 RP-Initiated Logout。
+	// 它与本应用的 AuthCookie 分离，且始终以 HttpOnly Cookie 方式保存。
+	KeycloakIDTokenCookieName string
+	KeycloakHTTPTimeout       time.Duration
 
 	// AuthCookie* 控制后端建立的本应用会话 Cookie。
 	AuthCookieName     string
@@ -68,16 +71,17 @@ func LoadConfig() *Config {
 		JWTSecret:    getEnv("JWT_SECRET", "change-me-in-production"),
 		JWTExpireHrs: getEnvInt("JWT_EXPIRE_HOURS", 72),
 
-		KeycloakEnabled:         getEnvBool("KEYCLOAK_ENABLED", false),
-		KeycloakIssuerURL:       strings.TrimRight(getEnv("KEYCLOAK_ISSUER_URL", ""), "/"),
-		KeycloakClientID:        getEnv("KEYCLOAK_CLIENT_ID", ""),
-		KeycloakClientSecret:    getEnv("KEYCLOAK_CLIENT_SECRET", ""),
-		KeycloakRedirectURL:     getEnv("KEYCLOAK_REDIRECT_URL", ""),
-		KeycloakFrontendURL:     frontendURL,
-		KeycloakScopes:          getEnvCSV("KEYCLOAK_SCOPES", "openid,profile,email"),
-		KeycloakStateSecret:     getEnv("KEYCLOAK_STATE_SECRET", ""),
-		KeycloakStateCookieName: getEnv("KEYCLOAK_STATE_COOKIE_NAME", "wormhole_oidc_state"),
-		KeycloakHTTPTimeout:     time.Duration(getEnvInt("KEYCLOAK_HTTP_TIMEOUT_SECONDS", 10)) * time.Second,
+		KeycloakEnabled:           getEnvBool("KEYCLOAK_ENABLED", false),
+		KeycloakIssuerURL:         strings.TrimRight(getEnv("KEYCLOAK_ISSUER_URL", ""), "/"),
+		KeycloakClientID:          getEnv("KEYCLOAK_CLIENT_ID", ""),
+		KeycloakClientSecret:      getEnv("KEYCLOAK_CLIENT_SECRET", ""),
+		KeycloakRedirectURL:       getEnv("KEYCLOAK_REDIRECT_URL", ""),
+		KeycloakFrontendURL:       frontendURL,
+		KeycloakScopes:            getEnvCSV("KEYCLOAK_SCOPES", "openid,profile,email"),
+		KeycloakStateSecret:       getEnv("KEYCLOAK_STATE_SECRET", ""),
+		KeycloakStateCookieName:   getEnv("KEYCLOAK_STATE_COOKIE_NAME", "wormhole_oidc_state"),
+		KeycloakIDTokenCookieName: getEnv("KEYCLOAK_ID_TOKEN_COOKIE_NAME", "wormhole_oidc_id_token"),
+		KeycloakHTTPTimeout:       time.Duration(getEnvInt("KEYCLOAK_HTTP_TIMEOUT_SECONDS", 10)) * time.Second,
 
 		AuthCookieName:     getEnv("AUTH_COOKIE_NAME", "wormhole_session"),
 		AuthCookieSecure:   getEnvBool("AUTH_COOKIE_SECURE", false),

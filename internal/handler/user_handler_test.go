@@ -100,6 +100,73 @@ func TestCallbackSSOUsesMatchingStateCookie(t *testing.T) {
 	}
 }
 
+func TestLogoutSSORedirectsToKeycloakAndClearsLocalCookies(t *testing.T) {
+	router, h, cleanup := newSSOTestRouter(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/logout", nil)
+	req.AddCookie(&http.Cookie{Name: h.cfg.AuthCookieName, Value: "application-session"})
+	req.AddCookie(&http.Cookie{Name: h.keycloakIDTokenCookieName(), Value: "keycloak-id-token"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("logout status = %d, want %d; body: %s", w.Code, http.StatusFound, w.Body.String())
+	}
+	redirectURL, err := url.Parse(w.Header().Get("Location"))
+	if err != nil {
+		t.Fatalf("parse logout redirect URL: %v", err)
+	}
+	if redirectURL.Path != "/logout" {
+		t.Fatalf("logout redirect path = %q, want /logout", redirectURL.Path)
+	}
+	query := redirectURL.Query()
+	if got, want := query.Get("id_token_hint"), "keycloak-id-token"; got != want {
+		t.Fatalf("id_token_hint = %q, want %q", got, want)
+	}
+	if got, want := query.Get("client_id"), h.cfg.KeycloakClientID; got != want {
+		t.Fatalf("client_id = %q, want %q", got, want)
+	}
+	if got, want := query.Get("post_logout_redirect_uri"), "http://frontend.test/login"; got != want {
+		t.Fatalf("post_logout_redirect_uri = %q, want %q", got, want)
+	}
+
+	cleared := map[string]*http.Cookie{}
+	for _, cookie := range w.Result().Cookies() {
+		cleared[cookie.Name] = cookie
+	}
+	for _, name := range []string{h.cfg.AuthCookieName, h.keycloakIDTokenCookieName()} {
+		cookie, ok := cleared[name]
+		if !ok {
+			t.Fatalf("logout response did not clear cookie %q", name)
+		}
+		if cookie.Value != "" || cookie.MaxAge >= 0 {
+			t.Fatalf("cookie %q = value %q, max-age %d; want deletion cookie", name, cookie.Value, cookie.MaxAge)
+		}
+	}
+}
+
+func TestLogoutSSOOnlyAllowsConfiguredFrontendReturnURL(t *testing.T) {
+	router, _, cleanup := newSSOTestRouter(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/logout?return_to="+url.QueryEscape("https://attacker.example/logout"), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("logout status = %d, want %d; body: %s", w.Code, http.StatusFound, w.Body.String())
+	}
+	redirectURL, err := url.Parse(w.Header().Get("Location"))
+	if err != nil {
+		t.Fatalf("parse logout redirect URL: %v", err)
+	}
+	if got, want := redirectURL.Query().Get("post_logout_redirect_uri"), "http://frontend.test"; got != want {
+		t.Fatalf("post_logout_redirect_uri = %q, want %q", got, want)
+	}
+}
+
 func TestAssignRolesReturnsUpdatedUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	stub := &userServiceStub{
@@ -159,25 +226,27 @@ func newSSOTestRouter(t *testing.T) (*gin.Engine, *UserHandler, func()) {
 			"authorization_endpoint": issuer + "/auth",
 			"token_endpoint":         issuer + "/token",
 			"jwks_uri":               issuer + "/jwks",
+			"end_session_endpoint":   issuer + "/logout",
 		})
 	}))
 	issuer = keycloakServer.URL
 
 	cfg := &config.Config{
-		KeycloakEnabled:         true,
-		KeycloakIssuerURL:       issuer,
-		KeycloakClientID:        "wormhole",
-		KeycloakClientSecret:    "client-secret",
-		KeycloakRedirectURL:     "http://backend.test/api/v1/auth/sso/callback",
-		KeycloakFrontendURL:     "http://frontend.test",
-		KeycloakScopes:          []string{"openid", "profile", "email"},
-		KeycloakStateSecret:     "0123456789abcdef0123456789abcdef",
-		KeycloakStateCookieName: "wormhole_oidc_state",
-		KeycloakHTTPTimeout:     time.Second,
-		AuthCookieName:          "wormhole_session",
-		AuthCookieSameSite:      "lax",
-		JWTSecret:               "abcdef0123456789abcdef0123456789",
-		JWTExpireHrs:            1,
+		KeycloakEnabled:           true,
+		KeycloakIssuerURL:         issuer,
+		KeycloakClientID:          "wormhole",
+		KeycloakClientSecret:      "client-secret",
+		KeycloakRedirectURL:       "http://backend.test/api/v1/auth/sso/callback",
+		KeycloakFrontendURL:       "http://frontend.test",
+		KeycloakScopes:            []string{"openid", "profile", "email"},
+		KeycloakStateSecret:       "0123456789abcdef0123456789abcdef",
+		KeycloakStateCookieName:   "wormhole_oidc_state",
+		KeycloakIDTokenCookieName: "wormhole_oidc_id_token",
+		KeycloakHTTPTimeout:       time.Second,
+		AuthCookieName:            "wormhole_session",
+		AuthCookieSameSite:        "lax",
+		JWTSecret:                 "abcdef0123456789abcdef0123456789",
+		JWTExpireHrs:              1,
 	}
 	h, err := NewUserHandler(nil, cfg)
 	if err != nil {
@@ -188,6 +257,7 @@ func newSSOTestRouter(t *testing.T) (*gin.Engine, *UserHandler, func()) {
 	router := gin.New()
 	router.GET("/api/v1/auth/sso/login", h.StartSSO)
 	router.GET("/api/v1/auth/sso/callback", h.CallbackSSO)
+	router.GET("/api/v1/auth/logout", h.LogoutSSO)
 	return router, h, keycloakServer.Close
 }
 

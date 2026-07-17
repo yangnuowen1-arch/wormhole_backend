@@ -64,6 +64,7 @@ type providerMetadata struct {
 	AuthorizationEndpoint string `json:"authorization_endpoint"`
 	TokenEndpoint         string `json:"token_endpoint"`
 	JWKSURI               string `json:"jwks_uri"`
+	EndSessionEndpoint    string `json:"end_session_endpoint"`
 }
 
 type tokenResponse struct {
@@ -143,14 +144,50 @@ func (c *Client) AuthorizationURL(ctx context.Context, state, nonce, verifier st
 	return metadata.AuthorizationEndpoint + "?" + query.Encode(), nil
 }
 
+// EndSessionURL 创建 RP-Initiated Logout 地址。浏览器必须跳转到该地址，才能将
+// Keycloak 域下的 SSO 会话 Cookie 一并注销。
+func (c *Client) EndSessionURL(ctx context.Context, idTokenHint, postLogoutRedirectURL string) (string, error) {
+	if !isAbsoluteHTTPURL(postLogoutRedirectURL) {
+		return "", errors.New("post logout redirect URL must be an absolute HTTP(S) URL")
+	}
+
+	metadata, err := c.discovery(ctx)
+	if err != nil {
+		return "", err
+	}
+	if !isAbsoluteHTTPURL(metadata.EndSessionEndpoint) {
+		return "", errors.New("Keycloak discovery document does not contain a valid end_session_endpoint")
+	}
+
+	endpoint, err := url.Parse(metadata.EndSessionEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("parse Keycloak end session endpoint: %w", err)
+	}
+	query := endpoint.Query()
+	query.Set("client_id", c.clientID)
+	query.Set("post_logout_redirect_uri", postLogoutRedirectURL)
+	if idTokenHint != "" {
+		query.Set("id_token_hint", idTokenHint)
+	}
+	endpoint.RawQuery = query.Encode()
+	return endpoint.String(), nil
+}
+
 // ExchangeAndVerify 用授权码换取 token，并严格验证返回的 ID token。
 func (c *Client) ExchangeAndVerify(ctx context.Context, code, verifier, expectedNonce string) (Identity, error) {
+	identity, _, err := c.ExchangeAndVerifyWithIDToken(ctx, code, verifier, expectedNonce)
+	return identity, err
+}
+
+// ExchangeAndVerifyWithIDToken 与 ExchangeAndVerify 相同，但会额外返回已经验证过的
+// ID Token，调用方只能将其用于 Keycloak 的 RP-Initiated Logout。
+func (c *Client) ExchangeAndVerifyWithIDToken(ctx context.Context, code, verifier, expectedNonce string) (Identity, string, error) {
 	if code == "" || verifier == "" || expectedNonce == "" {
-		return Identity{}, errors.New("authorization code, verifier and nonce are required")
+		return Identity{}, "", errors.New("authorization code, verifier and nonce are required")
 	}
 	metadata, err := c.discovery(ctx)
 	if err != nil {
-		return Identity{}, err
+		return Identity{}, "", err
 	}
 
 	form := url.Values{
@@ -161,7 +198,7 @@ func (c *Client) ExchangeAndVerify(ctx context.Context, code, verifier, expected
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, metadata.TokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return Identity{}, fmt.Errorf("create token request: %w", err)
+		return Identity{}, "", fmt.Errorf("create token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
@@ -170,22 +207,26 @@ func (c *Client) ExchangeAndVerify(ctx context.Context, code, verifier, expected
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return Identity{}, fmt.Errorf("call Keycloak token endpoint: %w", err)
+		return Identity{}, "", fmt.Errorf("call Keycloak token endpoint: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 8<<10))
-		return Identity{}, fmt.Errorf("Keycloak token endpoint returned HTTP %d", resp.StatusCode)
+		return Identity{}, "", fmt.Errorf("Keycloak token endpoint returned HTTP %d", resp.StatusCode)
 	}
 
 	var token tokenResponse
 	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(&token); err != nil {
-		return Identity{}, fmt.Errorf("decode Keycloak token response: %w", err)
+		return Identity{}, "", fmt.Errorf("decode Keycloak token response: %w", err)
 	}
 	if token.IDToken == "" {
-		return Identity{}, errors.New("Keycloak token response does not contain id_token")
+		return Identity{}, "", errors.New("Keycloak token response does not contain id_token")
 	}
-	return c.verifyIDToken(ctx, metadata, token.IDToken, expectedNonce)
+	identity, err := c.verifyIDToken(ctx, metadata, token.IDToken, expectedNonce)
+	if err != nil {
+		return Identity{}, "", err
+	}
+	return identity, token.IDToken, nil
 }
 
 func (c *Client) discovery(ctx context.Context) (providerMetadata, error) {
@@ -226,6 +267,9 @@ func (c *Client) discovery(ctx context.Context) (providerMetadata, error) {
 		if !isAbsoluteHTTPURL(endpoint) {
 			return providerMetadata{}, fmt.Errorf("invalid Keycloak %s", name)
 		}
+	}
+	if metadata.EndSessionEndpoint != "" && !isAbsoluteHTTPURL(metadata.EndSessionEndpoint) {
+		return providerMetadata{}, errors.New("invalid Keycloak end_session_endpoint")
 	}
 
 	c.metadata = metadata

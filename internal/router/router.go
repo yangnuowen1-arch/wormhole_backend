@@ -59,6 +59,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		if cfg.KeycloakEnabled {
 			authGroup.GET("/sso/login", userHandler.StartSSO)
 			authGroup.GET("/sso/callback", userHandler.CallbackSSO)
+			authGroup.GET("/logout", userHandler.LogoutSSO)
 			authGroup.POST("/logout", userHandler.Logout)
 		} else {
 			authGroup.POST("/register", userHandler.Register)
